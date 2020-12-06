@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">MWAProject</string>
+    <string name="app_name">My Way App</string>
+    <string name="imageView">imageView</string>
 </resources>
