@@ -29,11 +29,12 @@ public class MobileNetActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 //LinearLayOut Setup
+        super.onCreate(savedInstanceState);
         LinearLayout linearLayout= new LinearLayout(this);
         linearLayout.setOrientation(LinearLayout.VERTICAL);
 
         linearLayout.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.MATCH_PARENT));        super.onCreate(savedInstanceState);
+                LinearLayout.LayoutParams.MATCH_PARENT));
         LocalModel localModel =
                 new LocalModel.Builder()
                         .setAssetFilePath("lite-model_object_detection_mobile_object_labeler_v1_1.tflite")

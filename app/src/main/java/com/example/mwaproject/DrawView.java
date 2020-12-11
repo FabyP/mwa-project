@@ -37,7 +37,7 @@ class DrawView extends androidx.appcompat.widget.AppCompatImageView {
         myPaint.setStrokeWidth(10);
         myPaint.setStyle(Paint.Style.STROKE);
         for(Rect rect: rects){
-            canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, myPaint);
+            canvas.drawRect(rect.left +100 , rect.top + 500, rect.right + 100, rect.bottom +500, myPaint);
         }
     }
 

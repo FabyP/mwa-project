@@ -42,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
                         .build();
         ObjectDetector objectDetector = ObjectDetection.getClient(options);
         InputImage image;
-        String name = "example";
+        String name = "cat_dog_2";
         try {
             image = InputImage.fromFilePath(this, Uri.parse("android.resource://com.example.mwaproject/drawable/"+ name));
             objectDetector.process(image)
