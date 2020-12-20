@@ -92,7 +92,6 @@ public class MainActivity extends AppCompatActivity {
         textureView = findViewById(R.id.texture);
         assert textureView != null;
         textureView.setSurfaceTextureListener(textureListener);
-
         // Intent for image evaluation
         Intent intent = new Intent(this, EvaluationActivity.class);
         imagePath = MwaApplication.getAppContext().getExternalFilesDir(null).toString();
@@ -107,6 +106,7 @@ public class MainActivity extends AppCompatActivity {
                     pictureAlreadyTaken = true;
                     intent.putExtra("imagePath", imagePath);
                     intent.putExtra("imageName", imageName);
+                    intent.putExtra("modelType", EvaluationActivity.ModelType.OBJECT_LABELER_V1_1);
                     startActivity(intent);
                     return super.onDoubleTap(e);
                 }
