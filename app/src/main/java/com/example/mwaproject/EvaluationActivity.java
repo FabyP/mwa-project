@@ -42,6 +42,13 @@ public class EvaluationActivity extends AppCompatActivity {
         Intent intent = getIntent();
         String imagePath = intent.getStringExtra("imagePath");
         String imageName = intent.getStringExtra("imageName");
+
+        boolean isDepth16FormatSupported = intent.getBooleanExtra("isDepth16FormatSupported",false);
+        String imageDepth16Name;
+        // New image with depth information in PNG format
+        if(isDepth16FormatSupported) {
+            imageDepth16Name = intent.getStringExtra("imageNameDepth16");
+        }
         ModelType modelType = (ModelType) intent.getSerializableExtra("modelType");
 
         Bitmap myBitmap = BitmapFactory.decodeFile(imagePath + "/" + imageName);

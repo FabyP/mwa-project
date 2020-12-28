@@ -5,6 +5,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.Manifest;
 import android.content.Context;
@@ -38,6 +40,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.ShortBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -62,7 +65,10 @@ public class MainActivity extends AppCompatActivity {
     // Image
     private ImageReader imageReader;
     private Size imageDimension;
-    private final String imageName = "image.jpg";
+
+    public final String imageNameJpg = "imageJPG.jpg";
+    public final String imageNameDepth16 = "imageDEPTH16.PNG";
+
     private static final int REQUEST_CAMERA_PERMISSION = 200;
     private String imagePath;
 
@@ -80,6 +86,9 @@ public class MainActivity extends AppCompatActivity {
             Manifest.permission.CAMERA
     };
 
+    public final int jpegFormat = ImageFormat.JPEG;
+    public final int depth16Format = ImageFormat.DEPTH16;
+    public boolean isDepth16FormatSupported = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,6 +101,7 @@ public class MainActivity extends AppCompatActivity {
         textureView = findViewById(R.id.texture);
         assert textureView != null;
         textureView.setSurfaceTextureListener(textureListener);
+
         // Intent for image evaluation
         Intent intent = new Intent(this, EvaluationActivity.class);
         imagePath = MwaApplication.getAppContext().getExternalFilesDir(null).toString();
@@ -105,7 +115,11 @@ public class MainActivity extends AppCompatActivity {
                     takePicture();
                     pictureAlreadyTaken = true;
                     intent.putExtra("imagePath", imagePath);
-                    intent.putExtra("imageName", imageName);
+                    intent.putExtra("imageName", imageNameJpg);
+                    intent.putExtra("isDepth16FormatSupported", isDepth16FormatSupported);
+                    if(isDepth16FormatSupported) {
+                        intent.putExtra("imageNameDepth16", imageNameDepth16);
+                    }
                     intent.putExtra("modelType", EvaluationActivity.ModelType.OBJECT_LABELER_V1_1);
                     startActivity(intent);
                     return super.onDoubleTap(e);
@@ -183,6 +197,36 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // ImageReader for depth16 image
+    ImageReader.OnImageAvailableListener readerListenerForDepth16 = reader -> {
+        try (Image img = reader.acquireLatestImage()) {
+            File path = MwaApplication.getAppContext().getExternalFilesDir(null);
+            ShortBuffer shortDepthBuffer = img.getPlanes()[0].getBuffer().asShortBuffer();
+            shortDepthBuffer.rewind();
+
+            int w = img.getWidth();
+            int h = img.getHeight();
+            int rowStride = img.getPlanes()[0].getRowStride();
+            short[] yRow = new short[w];
+            int[] rgbData = new int[w * h];
+            int rgbIndex = 0;
+            for (int y = 0; y < h; y++) {
+                shortDepthBuffer.position(y * rowStride);
+                shortDepthBuffer.get(yRow, 0, w);
+                for (int x = 0; x < w; x++) {
+                    short y16 = yRow[x];
+                    rgbData[rgbIndex++] = Color.rgb(y16 & 0x00FF, (y16 >> 8) & 0x00FF, 0);
+                }
+            }
+            Bitmap rgbImage = Bitmap.createBitmap(rgbData, w, h, Bitmap.Config.ARGB_8888);
+            try (OutputStream output = new FileOutputStream(path + "/" + imageNameDepth16)) {
+                rgbImage.compress(Bitmap.CompressFormat.PNG, 100, output);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    };
+
     // Take a picture of the current scene
     protected void takePicture() {
         verifyStoragePermissions(this);
@@ -194,8 +238,9 @@ public class MainActivity extends AppCompatActivity {
         try {
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraDevice.getId());
             Size[] jpegSizes = null;
+
             if (characteristics != null) {
-                jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.JPEG);
+                jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(jpegFormat);
             }
             // Default values
             int width = 640;
@@ -205,22 +250,27 @@ public class MainActivity extends AppCompatActivity {
                 width = jpegSizes[0].getWidth();
                 height = jpegSizes[0].getHeight();
             }
-            ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 2);
+            ImageReader readerJpeg = ImageReader.newInstance(width, height, jpegFormat, 2);
+
+            // if depth16 is supported with camera
+            ImageReader readerDepth16;
+            if (isDepth16FormatSupported) {
+                readerDepth16 = ImageReader.newInstance(width, height, depth16Format, 2);
+                readerDepth16.setOnImageAvailableListener(readerListenerForDepth16, mBackgroundHandler);
+            }
 
             // The camera capture needs a surface to output what has been captured or being previewed
             List<Surface> outputSurfaces = new ArrayList<>(2);
-            outputSurfaces.add(reader.getSurface());
+            outputSurfaces.add(readerJpeg.getSurface());
             outputSurfaces.add(new Surface(textureView.getSurfaceTexture()));
             final CaptureRequest.Builder captureBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
-            captureBuilder.addTarget(reader.getSurface());
+            captureBuilder.addTarget(readerJpeg.getSurface());
             captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
 
             // Orientation
             int rotation = getWindowManager().getDefaultDisplay().getRotation();
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
-            // file = new File(imageStoragePath);
             File path = MwaApplication.getAppContext().getExternalFilesDir(null);
-
 
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
                 @Override
@@ -235,19 +285,19 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
                 private void save(byte[] bytes) throws IOException {
-                    try (OutputStream output = new FileOutputStream(path +"/"+imageName)) {
+                    try (OutputStream output = new FileOutputStream(path + "/" + imageNameJpg)) {
                         output.write(bytes);
                     }
                 }
             };
-            reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
+            readerJpeg.setOnImageAvailableListener(readerListener, mBackgroundHandler);
 
             // To capture or stream images from a camera device, the application must first create a camera capture session
             final CameraCaptureSession.CaptureCallback captureListener = new CameraCaptureSession.CaptureCallback() {
                 @Override
                 public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
                     super.onCaptureCompleted(session, request, result);
-                    Toast.makeText(MainActivity.this, "Saved:" + path+"/"+imageName, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Saved:" + path+ "/" + imageNameJpg, Toast.LENGTH_SHORT).show();
                     if(cameraDevice != null) {
                         createCameraPreview();
                     }
@@ -310,6 +360,17 @@ public class MainActivity extends AppCompatActivity {
         try {
             String cameraId = manager.getCameraIdList()[0];
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+
+            // Check if depth16 format is with camera possible
+            StreamConfigurationMap streamConfigMap =
+                    characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            for (OutputFormat format : OutputFormat.values()) {
+                if (!streamConfigMap.isOutputSupportedFor(format.imageFormat)) {
+                    isDepth16FormatSupported = false;
+                    Log.e("ATTENTION","Format " + format + " not supported - no depth information possible");
+                }
+            }
+
             StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             assert map != null;
             imageDimension = map.getOutputSizes(SurfaceTexture.class)[0];
@@ -349,7 +410,7 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == REQUEST_CAMERA_PERMISSION) {
             if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
                 // close the app
-                Toast.makeText(MainActivity.this, "Sorry!!!, you can't use this app without granting permission", Toast.LENGTH_LONG).show();
+                Toast.makeText(MainActivity.this, "You can't use this app without granting permission", Toast.LENGTH_LONG).show();
                 finish();
             }
         }
@@ -385,6 +446,16 @@ public class MainActivity extends AppCompatActivity {
                     PERMISSIONS_STORAGE,
                     REQUEST_EXTERNAL_STORAGE
             );
+        }
+    }
+
+    // Relevant output formats for application
+    enum OutputFormat {
+        JPEG(ImageFormat.JPEG),
+        DEPTH16(ImageFormat.DEPTH16);
+        public final int imageFormat;
+        OutputFormat(int imageFormat) {
+            this.imageFormat = imageFormat;
         }
     }
 }
