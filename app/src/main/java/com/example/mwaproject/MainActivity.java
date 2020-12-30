@@ -102,14 +102,13 @@ public class MainActivity extends AppCompatActivity {
                 public boolean onDoubleTap(MotionEvent e) {
                     Log.d("MWA", "onDoubleTap");
                     takePicture();
-                    pictureAlreadyTaken = true;
-                    try {
-                        Thread.sleep(500);
+
+                    if(imageByte != null) {
+                        // Thread.sleep(500);
+                        pictureAlreadyTaken = true;
                         intent.putExtra("imageByte", imageByte);
                         intent.putExtra("modelType", EvaluationActivity.ModelType.OBJECT_LABELER_V1_1);
                         startActivity(intent);
-                    } catch (InterruptedException interruptedException) {
-                        interruptedException.printStackTrace();
                     }
                     return super.onDoubleTap(e);
                 }
@@ -353,6 +352,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         Log.d("MWA", "onResume");
+        imageByte = null;
         startBackgroundThread();
         if (textureView.isAvailable()) {
             openCamera();
