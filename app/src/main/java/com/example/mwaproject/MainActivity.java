@@ -33,10 +33,6 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.Toast;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -60,11 +56,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // Image
-    private ImageReader imageReader;
+    private ImageReader reader;
+    ImageReader.OnImageAvailableListener readerListener;
+
+
     private Size imageDimension;
-    private final String imageName = "image.jpg";
     private static final int REQUEST_CAMERA_PERMISSION = 200;
-    private String imagePath;
+
+    byte[] imageByte;
+
 
     private boolean pictureAlreadyTaken = false;
 
@@ -94,7 +94,6 @@ public class MainActivity extends AppCompatActivity {
         textureView.setSurfaceTextureListener(textureListener);
         // Intent for image evaluation
         Intent intent = new Intent(this, EvaluationActivity.class);
-        imagePath = MwaApplication.getAppContext().getExternalFilesDir(null).toString();
 
         // Recognize double tap on screen, take a picture and change activity
         findViewById(R.id.cameraLayoutId).setOnTouchListener(new View.OnTouchListener() {
@@ -104,10 +103,14 @@ public class MainActivity extends AppCompatActivity {
                     Log.d("MWA", "onDoubleTap");
                     takePicture();
                     pictureAlreadyTaken = true;
-                    intent.putExtra("imagePath", imagePath);
-                    intent.putExtra("imageName", imageName);
-                    intent.putExtra("modelType", EvaluationActivity.ModelType.OBJECT_LABELER_V1_1);
-                    startActivity(intent);
+                    try {
+                        Thread.sleep(500);
+                        intent.putExtra("imageByte", imageByte);
+                        intent.putExtra("modelType", EvaluationActivity.ModelType.OBJECT_LABELER_V1_1);
+                        startActivity(intent);
+                    } catch (InterruptedException interruptedException) {
+                        interruptedException.printStackTrace();
+                    }
                     return super.onDoubleTap(e);
                 }
             });
@@ -173,18 +176,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     protected void stopBackgroundThread() {
-        mBackgroundThread.quitSafely();
-        try {
-            mBackgroundThread.join();
-            mBackgroundThread = null;
-            mBackgroundHandler = null;
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        if(mBackgroundThread != null) {
+            mBackgroundThread.quitSafely();
+            try {
+                mBackgroundThread.join();
+                mBackgroundThread = null;
+                mBackgroundHandler = null;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
     // Take a picture of the current scene
-    protected void takePicture() {
+    protected synchronized void takePicture() {
         verifyStoragePermissions(this);
         if(null == cameraDevice) {
             return;
@@ -205,7 +210,7 @@ public class MainActivity extends AppCompatActivity {
                 width = jpegSizes[0].getWidth();
                 height = jpegSizes[0].getHeight();
             }
-            ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 2);
+            reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 2);
 
             // The camera capture needs a surface to output what has been captured or being previewed
             List<Surface> outputSurfaces = new ArrayList<>(2);
@@ -218,36 +223,25 @@ public class MainActivity extends AppCompatActivity {
             // Orientation
             int rotation = getWindowManager().getDefaultDisplay().getRotation();
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
-            // file = new File(imageStoragePath);
-            File path = MwaApplication.getAppContext().getExternalFilesDir(null);
 
-
-            ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
-                @Override
-                public void onImageAvailable(ImageReader reader) {
-                    try (Image image = reader.acquireLatestImage()) {
-                        ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-                        byte[] bytes = new byte[buffer.capacity()];
-                        buffer.get(bytes);
-                        save(bytes);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-                private void save(byte[] bytes) throws IOException {
-                    try (OutputStream output = new FileOutputStream(path +"/"+imageName)) {
-                        output.write(bytes);
-                    }
+            readerListener = reader -> {
+                try (Image image = reader.acquireLatestImage()) {
+                    ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+                    byte[] bytes = new byte[buffer.capacity()];
+                    buffer.get(bytes);
+                    imageByte = bytes;
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             };
             reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
+
 
             // To capture or stream images from a camera device, the application must first create a camera capture session
             final CameraCaptureSession.CaptureCallback captureListener = new CameraCaptureSession.CaptureCallback() {
                 @Override
                 public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
                     super.onCaptureCompleted(session, request, result);
-                    Toast.makeText(MainActivity.this, "Saved:" + path+"/"+imageName, Toast.LENGTH_SHORT).show();
                     if(cameraDevice != null) {
                         createCameraPreview();
                     }
@@ -337,9 +331,9 @@ public class MainActivity extends AppCompatActivity {
             cameraDevice.close();
             cameraDevice = null;
         }
-        if (null != imageReader) {
-            imageReader.close();
-            imageReader = null;
+        if (null != reader) {
+            reader.close();
+            reader = null;
         }
     }
 
@@ -347,7 +341,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == REQUEST_CAMERA_PERMISSION) {
-            if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_DENIED) {
                 // close the app
                 Toast.makeText(MainActivity.this, "Sorry!!!, you can't use this app without granting permission", Toast.LENGTH_LONG).show();
                 finish();

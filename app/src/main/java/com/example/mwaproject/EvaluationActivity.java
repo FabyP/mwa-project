@@ -40,11 +40,11 @@ public class EvaluationActivity extends AppCompatActivity {
         MainActivity.verifyStoragePermissions(this);
         setContentView(R.layout.activity_evaluation);
         Intent intent = getIntent();
-        String imagePath = intent.getStringExtra("imagePath");
-        String imageName = intent.getStringExtra("imageName");
         ModelType modelType = (ModelType) intent.getSerializableExtra("modelType");
 
-        Bitmap myBitmap = BitmapFactory.decodeFile(imagePath + "/" + imageName);
+        byte[] byteArray = getIntent().getByteArrayExtra("imageByte");
+        Bitmap myBitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
+
         int rotation = getWindowManager().getDefaultDisplay().getRotation();
 
 
