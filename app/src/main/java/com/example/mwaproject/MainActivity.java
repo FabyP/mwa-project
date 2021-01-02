@@ -4,10 +4,8 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.preference.PreferenceManager;
-
 import android.app.Activity;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.Manifest;
 import android.content.Context;
@@ -71,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
 
     byte[] imageByte;
 
-
+    private Intent intent;
     private boolean pictureAlreadyTaken = false;
 
     // Handler
@@ -100,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
         assert textureView != null;
         textureView.setSurfaceTextureListener(textureListener);
         // Intent for image evaluation
-        Intent intent = new Intent(this, EvaluationActivity.class);
+        intent = new Intent(this, EvaluationActivity.class);
 
         // Recognize double tap on screen, take a picture and change activity
         findViewById(R.id.cameraLayoutId).setOnTouchListener(new View.OnTouchListener() {
@@ -109,14 +107,6 @@ public class MainActivity extends AppCompatActivity {
                 public boolean onDoubleTap(MotionEvent e) {
                     Log.d("MWA", "onDoubleTap");
                     takePicture();
-
-                    if(imageByte != null) {
-                        // Thread.sleep(500);
-                        pictureAlreadyTaken = true;
-                        intent.putExtra("imageByte", imageByte);
-                        //intent.putExtra("modelType", EvaluationActivity.ModelType.OBJECT_LABELER_V1_1);
-                        startActivity(intent);
-                    }
                     return super.onDoubleTap(e);
                 }
             });
@@ -236,6 +226,9 @@ public class MainActivity extends AppCompatActivity {
                     byte[] bytes = new byte[buffer.capacity()];
                     buffer.get(bytes);
                     imageByte = bytes;
+                    pictureAlreadyTaken = true;
+                    intent.putExtra("imageByte", imageByte);
+                    startActivity(intent);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

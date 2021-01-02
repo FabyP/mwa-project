@@ -68,7 +68,19 @@ public class EvaluationActivity extends AppCompatActivity {
         //ModelType modelType = (ModelType) intent.getSerializableExtra("modelType");
 
         byte[] byteArray = getIntent().getByteArrayExtra("imageByte");
+
         Bitmap myBitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
+
+        //TODO: Ausgabe löschen, wenn keine Fehler mehr auftreten.
+        if(byteArray != null) {
+            Log.e("EVA: Daten: ", String.valueOf(byteArray.length));
+            Log.e("EVA: Bitmap ist da: ", String.valueOf(myBitmap != null));
+            if(myBitmap != null) {
+                Log.e("EVA: Daten: ", myBitmap.getHeight() + " " + myBitmap.getWidth());
+            }
+        } else {
+            Log.e("EVA: Bild ist da: ", String.valueOf(byteArray != null));
+        }
 
         int rotation = getWindowManager().getDefaultDisplay().getRotation();
 
@@ -79,8 +91,9 @@ public class EvaluationActivity extends AppCompatActivity {
                 (SettingsActivity.KEY_PREF_EVALUATION_MODEL,"DEFAULT");
         Toast.makeText(this, modelType.toString(),
                 Toast.LENGTH_SHORT).show();
+        Log.e("EVA", "Modeltype: " + modelType);
         switch(modelType) {
-            case "DEFAULT":
+            default:
                 ObjectDetectorOptions objectDetectorOptions = new ObjectDetectorOptions.Builder()
                         .setDetectorMode(ObjectDetectorOptions.SINGLE_IMAGE_MODE)
                         .enableMultipleObjects()
@@ -89,14 +102,18 @@ public class EvaluationActivity extends AppCompatActivity {
                  objectDetector = ObjectDetection.getClient(objectDetectorOptions);
                 break;
             case "OBJECT_LABELER_V1_1":
+                Log.e("EVA: Detector", "OBJECT_LABELER_V1_1");
                 objectDetector=  getCustomObjectDetector("lite-model_object_detection_mobile_object_labeler_v1_1.tflite");
                 break;
             case "MOBILENET_V2_1":
+                Log.e("EVA: Detector", "MOBILENET_V2_1");
                 objectDetector=  getCustomObjectDetector("mobilenet_v2_1.0_224_1_metadata_1.tflite");
                 break;
         }
 
         InputImage image = InputImage.fromBitmap(myBitmap, rotation);
+        Log.e("EVA", "ObjectDetector da?:" + String.valueOf(objectDetector != null));
+
         objectDetector.process(image)
                 .addOnSuccessListener(
                         new OnSuccessListener<List<DetectedObject>>() {
