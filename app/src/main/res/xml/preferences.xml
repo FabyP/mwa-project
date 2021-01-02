@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <ListPreference
+        android:defaultValue="1"
+        android:entries="@array/model_types"
+        android:entryValues="@array/model_types"
+        android:key="model_preference_1"
+        android:title="Object Detection Model auswählen"
+        android:summary="%s"
+        />
 </PreferenceScreen>

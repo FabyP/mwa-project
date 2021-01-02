@@ -1,4 +1,13 @@
 <resources>
     <string name="app_name">My Way App</string>
     <string name="imageView">imageView</string>
+    <string name="settings">Einstellungen</string>
+    <string name="help">Hilfe</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string-array name="model_types">
+        <item>DEFAULT</item>
+        <item>OBJECT_LABELER_V1_1</item>
+        <item>MOBILENET_V2_1</item>
+    </string-array>
 </resources>

@@ -3,8 +3,11 @@ package com.example.mwaproject;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.preference.PreferenceManager;
+
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.Manifest;
 import android.content.Context;
@@ -28,6 +31,9 @@ import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.GestureDetector;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.TextureView;
@@ -80,12 +86,13 @@ public class MainActivity extends AppCompatActivity {
             Manifest.permission.CAMERA
     };
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // check permissions
         verifyStoragePermissions(this);
+        PreferenceManager.setDefaultValues(this,R.xml.preferences,false);
+
 
         // UIElements
         setContentView(R.layout.activity_main);
@@ -107,7 +114,7 @@ public class MainActivity extends AppCompatActivity {
                         // Thread.sleep(500);
                         pictureAlreadyTaken = true;
                         intent.putExtra("imageByte", imageByte);
-                        intent.putExtra("modelType", EvaluationActivity.ModelType.OBJECT_LABELER_V1_1);
+                        //intent.putExtra("modelType", EvaluationActivity.ModelType.OBJECT_LABELER_V1_1);
                         startActivity(intent);
                     }
                     return super.onDoubleTap(e);
@@ -369,6 +376,26 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.settings:
+                Intent intent = new Intent(MainActivity.this,
+                        SettingsActivity.class);
+                startActivity(intent);
+                return true;
+                // Code for action_status and other cases...
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
     public static void verifyStoragePermissions(Activity activity) {
         // Check if we have write permission
         int permission = ActivityCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE);
