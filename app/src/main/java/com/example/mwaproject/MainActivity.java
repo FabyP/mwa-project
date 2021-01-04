@@ -6,6 +6,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.preference.PreferenceManager;
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.Manifest;
 import android.content.Context;
@@ -37,6 +39,8 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.Toast;
+
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -222,10 +226,25 @@ public class MainActivity extends AppCompatActivity {
 
             readerListener = reader -> {
                 try (Image image = reader.acquireLatestImage()) {
+                    Log.e("Image", "h:" + image.getHeight() + " w:" + image.getWidth());
                     ByteBuffer buffer = image.getPlanes()[0].getBuffer();
                     byte[] bytes = new byte[buffer.capacity()];
                     buffer.get(bytes);
-                    imageByte = bytes;
+
+
+                    Bitmap myBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                    int nh = (int) ( myBitmap.getHeight() * (512.0 / myBitmap.getWidth()) );
+                    Bitmap scaled = Bitmap.createScaledBitmap(myBitmap, 512, nh, true);
+
+                    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                    scaled.compress(Bitmap.CompressFormat.PNG, 100, stream);
+                    byte[] byteArray = stream.toByteArray();
+                    scaled.recycle();
+
+
+                    imageByte = byteArray;
+
+
                     pictureAlreadyTaken = true;
                     intent.putExtra("imageByte", imageByte);
                     startActivity(intent);

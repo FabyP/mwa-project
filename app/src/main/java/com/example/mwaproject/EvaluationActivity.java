@@ -72,6 +72,7 @@ public class EvaluationActivity extends AppCompatActivity {
         Bitmap myBitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
 
         //TODO: Ausgabe löschen, wenn keine Fehler mehr auftreten.
+        /*
         if(byteArray != null) {
             Log.e("EVA: Daten: ", String.valueOf(byteArray.length));
             Log.e("EVA: Bitmap ist da: ", String.valueOf(myBitmap != null));
@@ -81,7 +82,7 @@ public class EvaluationActivity extends AppCompatActivity {
         } else {
             Log.e("EVA: Bild ist da: ", String.valueOf(byteArray != null));
         }
-
+        */
         int rotation = getWindowManager().getDefaultDisplay().getRotation();
 
         SharedPreferences sharedPref =
