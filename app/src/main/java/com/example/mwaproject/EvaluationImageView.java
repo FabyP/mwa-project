@@ -44,7 +44,7 @@ public class EvaluationImageView {
 
         //Attach the canvas to the ImageView
         imageView.setImageBitmap(tempBitmap);
-        imageView.setRotation(MainActivity.ORIENTATIONS.get(rotation));
+        imageView.setRotation(EvaluationActivity.ORIENTATIONS.get(rotation));
     }
 
     public void setDetectedObjetcs(List<DetectedObject> detectedObjects) {

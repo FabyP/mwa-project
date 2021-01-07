@@ -3,13 +3,12 @@
     package="com.example.mwaproject">
 
     <uses-sdk
-        android:maxSdkVersion="30"
+        android:maxSdkVersion="29"
         android:minSdkVersion="23" />
     <!-- Permissions -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-
     <uses-feature android:name="android.hardware.camera2.full" />
 
     <application
@@ -24,21 +23,21 @@
         android:theme="@style/Theme.MWAProject">
         <activity android:name=".SettingsActivity"
             android:label="Settings"
-            android:parentActivityName=".MainActivity">
+            android:screenOrientation="portrait"
+            android:parentActivityName=".EvaluationActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".MainActivity"/>
-        </activity>
-        <activity android:name=".MainActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+                android:value=".EvaluationActivity"/>
         </activity>
         <activity
             android:name=".EvaluationActivity"
-            android:parentActivityName=".MainActivity"></activity>
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity>
     </application>
 
 </manifest>
