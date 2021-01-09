@@ -490,6 +490,7 @@ public class EvaluationActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 // TODO: Do something with data of imageByteDepth16
+                                Log.e("MWA", "READY TO DO STH WITH DEPTH16");
                             }
                         });
                     }
