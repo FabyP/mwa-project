@@ -90,6 +90,7 @@ public class EvaluationActivity extends AppCompatActivity {
     protected CameraCaptureSession cameraCaptureSessions;
     protected CaptureRequest.Builder captureRequestBuilder;
     private final Semaphore mCameraOpenCloseLock = new Semaphore(1);
+    public boolean isDepth16FormatSupported = true;
 
     // Orientations for camera
     public static final SparseIntArray ORIENTATIONS = new SparseIntArray();
@@ -103,12 +104,14 @@ public class EvaluationActivity extends AppCompatActivity {
     // Image
     private ImageReader reader;
     ImageReader.OnImageAvailableListener readerListener;
+    private boolean isReadyForNextPicture = true;
 
 
     private Size imageDimension;
     private static final int REQUEST_CAMERA_PERMISSION = 200;
 
-    byte[] imageByte;
+    byte[] imageByteJPG;
+    byte[] imageByteDepth16;
 
     // Handler
     private Handler mBackgroundHandler;
@@ -129,16 +132,14 @@ public class EvaluationActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.e("MWA", "onCreate");
         super.onCreate(savedInstanceState);
         verifyStoragePermissions(this);
         PreferenceManager.setDefaultValues(this,R.xml.preferences,false);
-
         setContentView(R.layout.activity_evaluation);
         textureView = findViewById(R.id.texture);
         assert textureView != null;
         textureView.setSurfaceTextureListener(textureListener);
-        if(imageByte != null) {
+        if(imageByteJPG != null) {
             textureView.setVisibility(View.GONE);
         } else {
             textureView.setVisibility(View.VISIBLE);
@@ -149,8 +150,15 @@ public class EvaluationActivity extends AppCompatActivity {
             private final GestureDetector gestureDetector = new GestureDetector(EvaluationActivity.this, new GestureDetector.SimpleOnGestureListener() {
                 @Override
                 public boolean onDoubleTap(MotionEvent e) {
-                    Log.e("MWA", "onDoubleTap");
-                    takePicture();
+                    if(isReadyForNextPicture) {
+                        Log.e("MWA", "onDoubleTap");
+                        takePicture();
+                    } else {
+                        Log.e("MWA", "Reset camera - try it again");
+                        closeCamera();
+                        stopBackgroundThread();
+                        onResume();
+                    }
                     return super.onDoubleTap(e);
                 }
             });
@@ -186,8 +194,8 @@ public class EvaluationActivity extends AppCompatActivity {
     }
 
     private void evaluateImage() {
-        Log.e("EvaluateImage", "Evaluation Start");
-        if(imageByte != null) {
+        // Log.e("EvaluateImage", "Evaluation Start");
+        if(imageByteJPG != null) {
             textureView.setVisibility(View.GONE);
         } else {
             textureView.setVisibility(View.VISIBLE);
@@ -195,7 +203,7 @@ public class EvaluationActivity extends AppCompatActivity {
 
         //ModelType modelType = (ModelType) intent.getSerializableExtra("modelType");
 
-        byte[] byteArray = imageByte;
+        byte[] byteArray = imageByteJPG;
 
         Bitmap myBitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
         int rotation = getWindowManager().getDefaultDisplay().getRotation();
@@ -253,6 +261,7 @@ public class EvaluationActivity extends AppCompatActivity {
                                 Log.i(TAG, "Detected " + e);
                             }
                         });
+        // Log.e("MWA", "evaluation is finished");
     }
 
     TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
@@ -318,8 +327,9 @@ public class EvaluationActivity extends AppCompatActivity {
         }
     }
 
-    // Take a picture of the current scene
+    // Take a picture in jpeg format
     protected synchronized void takePicture() {
+        isReadyForNextPicture = false;
         verifyStoragePermissions(this);
         if(null == cameraDevice) {
             return;
@@ -367,14 +377,20 @@ public class EvaluationActivity extends AppCompatActivity {
                     ByteBuffer buffer = image.getPlanes()[0].getBuffer();
                     byte[] bytes = new byte[buffer.capacity()];
                     buffer.get(bytes);
-                    imageByte = bytes;
+                    imageByteJPG = bytes;
 
-                    if(imageByte != null && imageByte.length > 0) {
+                    if(imageByteJPG != null && imageByteJPG.length > 0) {
+                        buffer.clear();
                         new Handler(Looper.getMainLooper()).post(new Runnable() {
                             @Override
                             public void run() {
                                 textureView = findViewById(R.id.texture);
                                 textureView.setVisibility(View.GONE);
+                                if(isDepth16FormatSupported) {
+                                    takeDepthPicture();
+                                } else {
+                                    Log.e("MWA", "Depth16 is not supported - no distance calculation possible");
+                                }
                                 evaluateImage();
                             }
                         });
@@ -388,7 +404,6 @@ public class EvaluationActivity extends AppCompatActivity {
                 }
             };
             reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
-
 
             // To capture or stream images from a camera device, the application must first create a camera capture session
             final CameraCaptureSession.CaptureCallback captureListener = new CameraCaptureSession.CaptureCallback() {
@@ -419,14 +434,114 @@ public class EvaluationActivity extends AppCompatActivity {
         }
     }
 
+    // Take image in depth16 format
+    protected synchronized void takeDepthPicture() {
+        verifyStoragePermissions(this);
+        if(null == cameraDevice) {
+            return;
+        }
+        // The android CameraManager class is used to manage all the camera devices in the android device
+        CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+        try {
+            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraDevice.getId());
+            Size[] jpegSizes = null;
+            if (characteristics != null) {
+                jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.JPEG);
+            }
+            // Default values
+            int width = 1280;
+            int height = 720;
+            // set size
+            if (jpegSizes != null && 0 < jpegSizes.length) {
+                if(jpegSizes[0].getWidth() < width || jpegSizes[0].getHeight() < height) {
+                    width = jpegSizes[0].getWidth();
+                    height = jpegSizes[0].getHeight();
+                } else if(jpegSizes[0].getWidth() < jpegSizes[0].getHeight()) {
+                    width = 720;
+                    height = 1280;
+                }
+            }
+            reader = ImageReader.newInstance(width, height, ImageFormat.DEPTH16, 2);
+
+            // The camera capture needs a surface to output what has been captured or being previewed
+            List<Surface> outputSurfaces = new ArrayList<>(2);
+            outputSurfaces.add(reader.getSurface());
+            outputSurfaces.add(new Surface(textureView.getSurfaceTexture()));
+            final CaptureRequest.Builder captureBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
+            captureBuilder.addTarget(reader.getSurface());
+            captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+
+            // Orientation
+            int rotation = getWindowManager().getDefaultDisplay().getRotation();
+            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
+
+            readerListener = reader -> {
+                Image image = null;
+                try {
+                    image = reader.acquireLatestImage();
+                    ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+                    byte[] bytes = new byte[buffer.capacity()];
+                    buffer.get(bytes);
+                    imageByteDepth16 = bytes;
+
+                    if(imageByteDepth16 != null && imageByteDepth16.length > 0) {
+                        buffer.clear();
+                        new Handler(Looper.getMainLooper()).post(new Runnable() {
+                            @Override
+                            public void run() {
+                                // TODO: Do something with data of imageByteDepth16
+                            }
+                        });
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    if (image != null) {
+                        image.close();
+                    }
+                }
+            };
+            reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
+
+            // To capture or stream images from a camera device, the application must first create a camera capture session
+            final CameraCaptureSession.CaptureCallback captureListener = new CameraCaptureSession.CaptureCallback() {
+                @Override
+                public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
+                    super.onCaptureCompleted(session, request, result);
+                    if(cameraDevice != null) {
+                        createCameraPreview();
+                    }
+                }
+            };
+
+            cameraDevice.createCaptureSession(outputSurfaces, new CameraCaptureSession.StateCallback() {
+                @Override
+                public void onConfigured(CameraCaptureSession session) {
+                    try {
+                        session.capture(captureBuilder.build(), captureListener, mBackgroundHandler);
+                    } catch (CameraAccessException e) {
+                        e.printStackTrace();
+                    } catch (Exception e) {
+                        Log.e("MWA", "HARD ERROR 3");
+                    }
+                }
+                @Override
+                public void onConfigureFailed(CameraCaptureSession session) {
+                }
+            }, mBackgroundHandler);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
     protected void createCameraPreview() {
         try {
+            Log.e("MWA", "createCameraPreview");
             SurfaceTexture texture = textureView.getSurfaceTexture();
             assert texture != null;
             texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
             Surface surface = new Surface(texture);
                 captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-
                 captureRequestBuilder.addTarget(surface);
                 cameraDevice.createCaptureSession(Collections.singletonList(surface), new CameraCaptureSession.StateCallback() {
                     @Override
@@ -452,6 +567,7 @@ public class EvaluationActivity extends AppCompatActivity {
     }
 
     private void openCamera() {
+        Log.e("MWA", "openCamera");
         CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         try {
             String cameraId = manager.getCameraIdList()[0];
@@ -459,6 +575,18 @@ public class EvaluationActivity extends AppCompatActivity {
             StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             assert map != null;
             imageDimension = map.getOutputSizes(SurfaceTexture.class)[0];
+
+            for (OutputFormat format : OutputFormat.values()) {
+                try {
+                    if (!map.isOutputSupportedFor(format.imageFormat)) {
+                        isDepth16FormatSupported = false;
+                        Log.e("ATTENTION", "Format " + format + " not supported - no depth information possible");
+                    }
+                } catch(IllegalArgumentException e) {
+                    isDepth16FormatSupported = false;
+                }
+            }
+
             // Add permission for camera and let user grant the permission
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(EvaluationActivity.this, new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CAMERA_PERMISSION);
@@ -476,15 +604,29 @@ public class EvaluationActivity extends AppCompatActivity {
     }
 
     protected void updatePreview() {
+        Log.e("MWA", "updatePreview");
         if (null == cameraDevice) {
             Log.e("MWA", "updatePreview error, return");
             return;
         }
+        try {
+            cameraCaptureSessions.abortCaptures();
+            cameraCaptureSessions.stopRepeating();
+            isReadyForNextPicture = true;
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            Log.e("MWA", "HARD ERROR 2");
+        }
+
         captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+
         try {
             cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), null, mBackgroundHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
+        } catch(Exception e) {
+            Log.e("MWA", "HARD ERROR");
         }
     }
     private void closeCamera() {
@@ -512,7 +654,8 @@ public class EvaluationActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        imageByte = null;
+        imageByteDepth16 = null;
+        imageByteJPG = null;
         startBackgroundThread();
         if (textureView.isAvailable()) {
             openCamera();
@@ -549,6 +692,7 @@ public class EvaluationActivity extends AppCompatActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
     public static void verifyStoragePermissions(Activity activity) {
         // Check if we have write permission
         int permission = ActivityCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE);
@@ -559,6 +703,15 @@ public class EvaluationActivity extends AppCompatActivity {
                     PERMISSIONS_STORAGE,
                     REQUEST_EXTERNAL_STORAGE
             );
+        }
+    }
+
+    enum OutputFormat {
+        JPEG(ImageFormat.JPEG),
+        DEPTH16(ImageFormat.DEPTH16);
+        public final int imageFormat;
+        OutputFormat(int imageFormat) {
+            this.imageFormat = imageFormat;
         }
     }
 }
