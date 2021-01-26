@@ -57,6 +57,8 @@ import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions;
 import org.tensorflow.lite.task.vision.detector.Detection;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.ShortBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -111,7 +113,8 @@ public class EvaluationActivity extends AppCompatActivity {
     private static final int REQUEST_CAMERA_PERMISSION = 200;
 
     byte[] imageByteJPG;
-    byte[] imageByteDepth16;
+    Image imageDepth16;
+    // byte[] imageByteDepth16;
 
     // Handler
     private Handler mBackgroundHandler;
@@ -330,6 +333,7 @@ public class EvaluationActivity extends AppCompatActivity {
     // Take a picture in jpeg format
     protected synchronized void takePicture() {
         isReadyForNextPicture = false;
+        imageDepth16 = null;
         verifyStoragePermissions(this);
         if(null == cameraDevice) {
             return;
@@ -476,30 +480,40 @@ public class EvaluationActivity extends AppCompatActivity {
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
 
             readerListener = reader -> {
-                Image image = null;
+                // Image image = null;
                 try {
-                    image = reader.acquireLatestImage();
-                    ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+                    imageDepth16 = reader.acquireLatestImage();
+                    /*ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+                    image.getPlanes()[0].getBuffer().order(ByteOrder.nativeOrder());
                     byte[] bytes = new byte[buffer.capacity()];
-                    buffer.get(bytes);
-                    imageByteDepth16 = bytes;
+                    buffer.get(bytes);*/
+                    // imageByteDepth16 = bytes;
 
-                    if(imageByteDepth16 != null && imageByteDepth16.length > 0) {
-                        buffer.clear();
+                    if(imageDepth16 != null) {
+                        // buffer.clear();
                         new Handler(Looper.getMainLooper()).post(new Runnable() {
                             @Override
                             public void run() {
                                 // TODO: Do something with data of imageByteDepth16
                                 Log.e("MWA", "READY TO DO STH WITH DEPTH16");
+                                // ShortBuffer shortBuffer = imageByteDepth16.getPlanes()
+
+
+                                int distance = getMillimetersDepth(imageDepth16, 50,50);
+                                Log.d("Distanz", String.valueOf(distance));
                             }
                         });
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
                 } finally {
-                    if (image != null) {
-                        image.close();
+                    /*
+                    if (imageDepth16 != null) {
+                        imageDepth16.close();
+                        imageDepth16 = null;
                     }
+
+                     */
                 }
             };
             reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
@@ -655,7 +669,7 @@ public class EvaluationActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        imageByteDepth16 = null;
+        imageDepth16 = null;
         imageByteJPG = null;
         startBackgroundThread();
         if (textureView.isAvailable()) {
@@ -714,5 +728,27 @@ public class EvaluationActivity extends AppCompatActivity {
         OutputFormat(int imageFormat) {
             this.imageFormat = imageFormat;
         }
+    }
+
+//    Distance Calculation
+    public int getMillimetersDepth(Image depthImage, int x, int y){
+        Image.Plane plane = depthImage.getPlanes()[0];
+/*
+        ShortBuffer shortDepthBuffer = plane.getBuffer().asShortBuffer();
+        short depthSample = shortDepthBuffer.get();
+        short depthRange = (short) (depthSample & 0x1FFF);
+        short depthConfidence = (short) ((depthSample >> 13) & 0x7);
+        float depthPercentage = depthConfidence == 0 ? 1.f : (depthConfidence - 1)/7f;
+        Log.e("ALTERNATIVE", depthRange + " " + depthConfidence + " " + depthPercentage);*/
+
+
+        Log.d("Plane", String.valueOf(plane));
+        int byteIndex = x * plane.getPixelStride() + y * plane.getRowStride();
+        ByteBuffer buffer = plane.getBuffer().order(ByteOrder.nativeOrder());
+        short depthSample = buffer.getShort(byteIndex);
+
+
+
+        return depthSample;
     }
 }
