@@ -19,7 +19,7 @@ public class EvaluationTableView {
         this.tableLayout = tableLayout;
     }
 
-    public void drawDetectedObjectInformations(Context applicationContext, List<DetectedObject> detectedObjects) {
+    public void drawDetectedObjectInformations(Context applicationContext, List<DetectedObject> detectedObjects, ArrayList<DirectionInfoRect> directionInfoGrid) {
         String[] headLabels = {"Objekt", "Confidence", "Position", "Distanz"};
         TableRow headRow = new TableRow(applicationContext);
         headRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
@@ -42,9 +42,15 @@ public class EvaluationTableView {
 
                 for (DetectedObject.Label label : detectedObject.getLabels()) {
                     String labelText = label.getText();
-                    String position = "undefined"; // TODO position
+
                     float confidence = label.getConfidence();
                     float distance = 0; // TODO distance calculation
+                    String position = "undefined"; // TODO position
+                    for( DirectionInfoRect directionInfoRect : directionInfoGrid){
+                        if(directionInfoRect.rect.intersect(detectedObject.getBoundingBox())){
+                           position = directionInfoRect.toString();
+                        }
+                    }
 
                     TableRow newRow = new TableRow(applicationContext);
                     newRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));

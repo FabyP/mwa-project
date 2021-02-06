@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.util.Log;
 import android.widget.ImageView;
 
 import com.google.mlkit.vision.objects.DetectedObject;
@@ -38,7 +39,9 @@ public class EvaluationImageView {
         myPaint.setColor(Color.rgb(255, 0, 0));
         myPaint.setStrokeWidth(9);
         myPaint.setStyle(Paint.Style.STROKE);
+
         for (Rect rect : rects) {
+            Log.e("EVA: rect", rect.toString());
             tempCanvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, myPaint);
         }
 

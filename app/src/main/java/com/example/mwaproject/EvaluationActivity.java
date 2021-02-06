@@ -238,6 +238,27 @@ public class EvaluationActivity extends AppCompatActivity {
         }
 
         InputImage image = InputImage.fromBitmap(myBitmap, rotation);
+        int w = myBitmap.getWidth();
+        int h = myBitmap.getHeight();
+        Log.e("EVA: w", Integer.toString(w));
+        Log.e("EVA: h", Integer.toString(h));
+        Log.e("EVA: rotation", Integer.toString(rotation));
+        String[] vertikalDirections = {"Oben", "Mitte", "Unten", };
+        String[] horizontalDirections = {"Links", "Mitte", "Rechts", };
+        int vertikalCounter = 0;
+        int horizontalCounter = 0;
+        ArrayList<DirectionInfoRect> directionInfoGrid = new ArrayList<>();
+
+        for(int x = 0; x < w; x = x + (int) Math.ceil((double)w / 3)){
+            for(int y = 0; y < h; y = y + (h/3)){
+                Rect rect = new Rect(x, y, x +  (w/3), y +  (h/3));
+                DirectionInfoRect directionInfoRect = new DirectionInfoRect(horizontalDirections[horizontalCounter % 3], vertikalDirections[vertikalCounter % 3], rect);
+                directionInfoGrid.add(directionInfoRect);
+                vertikalCounter++;
+            }
+            horizontalCounter++;
+        }
+
 
         objectDetector.process(image)
                 .addOnSuccessListener(
@@ -252,7 +273,7 @@ public class EvaluationActivity extends AppCompatActivity {
                                 TableLayout tableLayout = findViewById(R.id.tableLayout);
                                 tableLayout.removeAllViews();
                                 EvaluationTableView evaluationTableView = new EvaluationTableView(tableLayout);
-                                evaluationTableView.drawDetectedObjectInformations(getApplicationContext(), detectedObjects);
+                                evaluationTableView.drawDetectedObjectInformations(getApplicationContext(), detectedObjects, directionInfoGrid);
                             }
                         })
                 .addOnFailureListener(
