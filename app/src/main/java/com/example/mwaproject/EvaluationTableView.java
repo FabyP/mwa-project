@@ -2,6 +2,8 @@ package com.example.mwaproject;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.graphics.Rect;
+import android.util.Log;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -11,7 +13,11 @@ import com.google.mlkit.vision.objects.DetectedObject;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+
 public class EvaluationTableView {
+    private static final String TAG = "MwaApplication";
 
     public TableLayout tableLayout;
 
@@ -46,10 +52,21 @@ public class EvaluationTableView {
                     float confidence = label.getConfidence();
                     float distance = 0; // TODO distance calculation
                     String position = "undefined"; // TODO position
+                    Double max = 0.0;
+                    Log.i(TAG, "position " + labelText.toString());
                     for( DirectionInfoRect directionInfoRect : directionInfoGrid){
-                        if(directionInfoRect.rect.intersect(detectedObject.getBoundingBox())){
-                           position = directionInfoRect.toString();
-                        }
+                            Double areaOverlap = overLappingAreaPercentage(directionInfoRect.rect, detectedObject.getBoundingBox());
+                            Double overlapSelf = overLappingAreaPercentage(directionInfoRect.rect,directionInfoRect.rect);
+                            Double overlapPercentage = areaOverlap / overlapSelf;
+                            if (overlapPercentage > max){
+                                max = overlapPercentage;
+                                position = directionInfoRect.toString();
+                            }
+                        Log.i(TAG, "position " + directionInfoRect.toString());
+                        Log.i(TAG, "overlapPercentage " + overlapPercentage);
+
+                        //position = directionInfoRect.toString();
+                            //position = areaOverlap.toString() + ", " + overlapSelf.toString() + ", " + overlapPercentage.toString();
                     }
 
                     TableRow newRow = new TableRow(applicationContext);
@@ -96,5 +113,11 @@ public class EvaluationTableView {
                     tableLayout.addView(newRow, new TableLayout.LayoutParams(TableLayout.LayoutParams.FILL_PARENT, TableLayout.LayoutParams.WRAP_CONTENT));
                 }
             }
+    }
+
+    private double overLappingAreaPercentage(Rect rect1, Rect rect2) {
+       int  x_overlap = Math.max(0, Math.min(rect1.right, rect2.right) - Math.max(rect1.left, rect2.left));
+        int y_overlap = Math.max(0, Math.min(rect1.bottom, rect2.bottom) - Math.max(rect1.top, rect2.top));
+        return x_overlap * y_overlap;
     }
 }

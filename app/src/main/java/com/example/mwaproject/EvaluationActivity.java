@@ -51,14 +51,11 @@ import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.objects.DetectedObject;
 import com.google.mlkit.vision.objects.ObjectDetection;
 import com.google.mlkit.vision.objects.ObjectDetector;
-import com.google.mlkit.vision.objects.ObjectDetectorOptionsBase;
 import com.google.mlkit.vision.objects.custom.CustomObjectDetectorOptions;
 import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions;
-import org.tensorflow.lite.task.vision.detector.Detection;
-import java.io.ByteArrayOutputStream;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.ShortBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -69,22 +66,6 @@ import java.util.concurrent.TimeUnit;
 public class EvaluationActivity extends AppCompatActivity {
     private static final String TAG = "MwaApplication";
     private ObjectDetector objectDetector;
-
-    // Configuration values for the prepackaged SSD model.
-    private static final int TF_OD_API_INPUT_SIZE = 300;
-    private static final boolean TF_OD_API_IS_QUANTIZED = true;
-    private static final String TF_OD_API_MODEL_FILE = "detect.tflite";
-    private static final String TF_OD_API_LABELS_FILE = "labelmap.txt";
-    private static final DetectorMode MODE = DetectorMode.TF_OD_API;
-    // Minimum detection confidence to track a detection.
-    private static final float MINIMUM_CONFIDENCE_TF_OD_API = 0.5f;
-    private static final boolean MAINTAIN_ASPECT = false;
-    private static final Size DESIRED_PREVIEW_SIZE = new Size(640, 480);
-    private static final boolean SAVE_PREVIEW_BITMAP = false;
-    private static final float TEXT_SIZE_DIP = 10;
-    private enum DetectorMode {
-        TF_OD_API;
-    }
 
     // Camera
     private TextureView textureView;
@@ -127,6 +108,7 @@ public class EvaluationActivity extends AppCompatActivity {
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
             Manifest.permission.CAMERA
     };
+    private ArrayList<DirectionInfoRect> directionInfoGrid;
 
     /*public enum ModelType {
         DEFAULT,
@@ -247,7 +229,7 @@ public class EvaluationActivity extends AppCompatActivity {
         String[] horizontalDirections = {"Links", "Mitte", "Rechts", };
         int vertikalCounter = 0;
         int horizontalCounter = 0;
-        ArrayList<DirectionInfoRect> directionInfoGrid = new ArrayList<>();
+        directionInfoGrid = new ArrayList<>();
 
         for(int x = 0; x < w; x = x + (int) Math.ceil((double)w / 3)){
             for(int y = 0; y < h; y = y + (h/3)){
@@ -267,7 +249,8 @@ public class EvaluationActivity extends AppCompatActivity {
                             public void onSuccess(List<DetectedObject> detectedObjects) {
                                 ImageView imageView = findViewById(R.id.imageView);
                                 EvaluationImageView evaluationView = new EvaluationImageView(imageView, myBitmap, rotation);
-                                evaluationView.setDetectedObjetcs(detectedObjects);
+                                //evaluationView.setDirectionInfoObjects(directionInfoGrid);
+                                evaluationView.setDetectedObjects(detectedObjects);
                                 evaluationView.drawEvalRectsOnImageView();
 
                                 TableLayout tableLayout = findViewById(R.id.tableLayout);

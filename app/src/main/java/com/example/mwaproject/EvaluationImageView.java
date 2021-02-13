@@ -50,11 +50,17 @@ public class EvaluationImageView {
         imageView.setRotation(EvaluationActivity.ORIENTATIONS.get(rotation));
     }
 
-    public void setDetectedObjetcs(List<DetectedObject> detectedObjects) {
+    public void setDetectedObjects(List<DetectedObject> detectedObjects) {
         for (final DetectedObject detectedObject : detectedObjects) {
             Rect boundingBox = detectedObject.getBoundingBox();
             rects.add(boundingBox);
         }
     }
 
+    public void setDirectionInfoObjects(ArrayList<DirectionInfoRect> directionInfoGrid) {
+        for (final DirectionInfoRect singleDirectionInfoGrid : directionInfoGrid) {
+            Rect rect = singleDirectionInfoGrid.rect;
+            rects.add(rect);
+        }
+    }
 }
