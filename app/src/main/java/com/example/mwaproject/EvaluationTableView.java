@@ -53,7 +53,7 @@ public class EvaluationTableView {
                     float distance = 0; // TODO distance calculation
                     String position = "undefined"; // TODO position
                     Double max = 0.0;
-                    Log.i(TAG, "position " + labelText.toString());
+                    // Log.i(TAG, "position " + labelText.toString());
                     for( DirectionInfoRect directionInfoRect : directionInfoGrid){
                             Double areaOverlap = overLappingAreaPercentage(directionInfoRect.rect, detectedObject.getBoundingBox());
                             Double overlapSelf = overLappingAreaPercentage(directionInfoRect.rect,directionInfoRect.rect);
@@ -62,11 +62,8 @@ public class EvaluationTableView {
                                 max = overlapPercentage;
                                 position = directionInfoRect.toString();
                             }
-                        Log.i(TAG, "position " + directionInfoRect.toString());
-                        Log.i(TAG, "overlapPercentage " + overlapPercentage);
-
-                        //position = directionInfoRect.toString();
-                            //position = areaOverlap.toString() + ", " + overlapSelf.toString() + ", " + overlapPercentage.toString();
+                       /* Log.i(TAG, "position " + directionInfoRect.toString());
+                        Log.i(TAG, "overlapPercentage " + overlapPercentage);*/
                     }
 
                     TableRow newRow = new TableRow(applicationContext);

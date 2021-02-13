@@ -108,7 +108,9 @@ public class EvaluationActivity extends AppCompatActivity {
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
             Manifest.permission.CAMERA
     };
+
     private ArrayList<DirectionInfoRect> directionInfoGrid;
+    private List<DetectedObject> detectedObjectList;
 
     /*public enum ModelType {
         DEFAULT,
@@ -225,8 +227,8 @@ public class EvaluationActivity extends AppCompatActivity {
         Log.e("EVA: w", Integer.toString(w));
         Log.e("EVA: h", Integer.toString(h));
         Log.e("EVA: rotation", Integer.toString(rotation));
-        String[] vertikalDirections = {"Oben", "Mitte", "Unten", };
-        String[] horizontalDirections = {"Links", "Mitte", "Rechts", };
+        String[] vertikalDirections = {"Rechts", "Mitte", "Links", };
+        String[] horizontalDirections = {"Oben", "Mitte", "Unten", };
         int vertikalCounter = 0;
         int horizontalCounter = 0;
         directionInfoGrid = new ArrayList<>();
@@ -247,10 +249,12 @@ public class EvaluationActivity extends AppCompatActivity {
                         new OnSuccessListener<List<DetectedObject>>() {
                             @Override
                             public void onSuccess(List<DetectedObject> detectedObjects) {
+                                detectedObjectList = detectedObjects;
+
                                 ImageView imageView = findViewById(R.id.imageView);
                                 EvaluationImageView evaluationView = new EvaluationImageView(imageView, myBitmap, rotation);
-                                //evaluationView.setDirectionInfoObjects(directionInfoGrid);
-                                evaluationView.setDetectedObjects(detectedObjects);
+                                //evaluationView.setDirectionInfoObjects(directionInfoGrid); useful for debugging the grid
+                                evaluationView.setDetectedObjects(detectedObjectList);
                                 evaluationView.drawEvalRectsOnImageView();
 
                                 TableLayout tableLayout = findViewById(R.id.tableLayout);
