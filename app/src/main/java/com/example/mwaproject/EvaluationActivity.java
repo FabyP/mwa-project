@@ -32,7 +32,6 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.util.Log;
 import android.util.Size;
-import android.util.SparseIntArray;
 import android.view.GestureDetector;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -53,7 +52,6 @@ import com.google.mlkit.vision.objects.ObjectDetection;
 import com.google.mlkit.vision.objects.ObjectDetector;
 import com.google.mlkit.vision.objects.custom.CustomObjectDetectorOptions;
 import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -75,14 +73,7 @@ public class EvaluationActivity extends AppCompatActivity {
     private final Semaphore mCameraOpenCloseLock = new Semaphore(1);
     public boolean isDepth16FormatSupported = true;
 
-    // Orientations for camera
-    public static final SparseIntArray ORIENTATIONS = new SparseIntArray();
-    static {
-        ORIENTATIONS.append(Surface.ROTATION_0, 90);
-        ORIENTATIONS.append(Surface.ROTATION_90, 0);
-        ORIENTATIONS.append(Surface.ROTATION_180, 270);
-        ORIENTATIONS.append(Surface.ROTATION_270, 180);
-    }
+    public static int orientation = 90;
 
     // Image
     private ImageReader reader;
@@ -95,7 +86,6 @@ public class EvaluationActivity extends AppCompatActivity {
 
     byte[] imageByteJPG;
     Image imageDepth16;
-    // byte[] imageByteDepth16;
 
     // Handler
     private Handler mBackgroundHandler;
@@ -227,22 +217,29 @@ public class EvaluationActivity extends AppCompatActivity {
         Log.e("EVA: w", Integer.toString(w));
         Log.e("EVA: h", Integer.toString(h));
         Log.e("EVA: rotation", Integer.toString(rotation));
-        String[] vertikalDirections = {"Rechts", "Mitte", "Links", };
+        String[] verticalDirections = {"Rechts", "Mitte", "Links", };
         String[] horizontalDirections = {"Oben", "Mitte", "Unten", };
-        int vertikalCounter = 0;
+        int verticalCounter = 0;
         int horizontalCounter = 0;
         directionInfoGrid = new ArrayList<>();
 
         for(int x = 0; x < w; x = x + (int) Math.ceil((double)w / 3)){
             for(int y = 0; y < h; y = y + (h/3)){
                 Rect rect = new Rect(x, y, x +  (w/3), y +  (h/3));
-                DirectionInfoRect directionInfoRect = new DirectionInfoRect(horizontalDirections[horizontalCounter % 3], vertikalDirections[vertikalCounter % 3], rect);
+                DirectionInfoRect directionInfoRect = new DirectionInfoRect(horizontalDirections[horizontalCounter % 3], verticalDirections[verticalCounter % 3], rect);
                 directionInfoGrid.add(directionInfoRect);
-                vertikalCounter++;
+                verticalCounter++;
             }
             horizontalCounter++;
         }
 
+        //TODO: Ist berechnung korrekt ? (Es kann auch die Confidence für die Entfernung ergänzt werden)
+        if(isDepth16FormatSupported && imageDepth16 != null) {
+            for(DirectionInfoRect infoRect: directionInfoGrid) {
+                double distance = getMillimetersDepth(imageDepth16, infoRect.rect.centerX(), infoRect.rect.centerY());
+                infoRect.distance = distance;
+            }
+        }
 
         objectDetector.process(image)
                 .addOnSuccessListener(
@@ -379,8 +376,7 @@ public class EvaluationActivity extends AppCompatActivity {
             captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
 
             // Orientation
-            int rotation = getWindowManager().getDefaultDisplay().getRotation();
-            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
+            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, orientation);
 
             readerListener = reader -> {
                 Image image = null;
@@ -402,8 +398,9 @@ public class EvaluationActivity extends AppCompatActivity {
                                     takeDepthPicture();
                                 } else {
                                     Log.e("MWA", "Depth16 is not supported - no distance calculation possible");
+                                    evaluateImage();
                                 }
-                                evaluateImage();
+
                             }
                         });
                     }
@@ -484,8 +481,7 @@ public class EvaluationActivity extends AppCompatActivity {
             captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
 
             // Orientation
-            int rotation = getWindowManager().getDefaultDisplay().getRotation();
-            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
+            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, orientation);
 
             readerListener = reader -> {
                 // Image image = null;
@@ -506,9 +502,9 @@ public class EvaluationActivity extends AppCompatActivity {
                                 Log.e("MWA", "READY TO DO STH WITH DEPTH16");
                                 // ShortBuffer shortBuffer = imageByteDepth16.getPlanes()
 
-
                                 int distance = getMillimetersDepth(imageDepth16, 50,50);
                                 Log.d("Distanz", String.valueOf(distance));
+                                evaluateImage();
                             }
                         });
                     }
@@ -741,22 +737,15 @@ public class EvaluationActivity extends AppCompatActivity {
 //    Distance Calculation
     public int getMillimetersDepth(Image depthImage, int x, int y){
         Image.Plane plane = depthImage.getPlanes()[0];
-/*
-        ShortBuffer shortDepthBuffer = plane.getBuffer().asShortBuffer();
-        short depthSample = shortDepthBuffer.get();
-        short depthRange = (short) (depthSample & 0x1FFF);
-        short depthConfidence = (short) ((depthSample >> 13) & 0x7);
-        float depthPercentage = depthConfidence == 0 ? 1.f : (depthConfidence - 1)/7f;
-        Log.e("ALTERNATIVE", depthRange + " " + depthConfidence + " " + depthPercentage);*/
-
-
-        Log.d("Plane", String.valueOf(plane));
         int byteIndex = x * plane.getPixelStride() + y * plane.getRowStride();
         ByteBuffer buffer = plane.getBuffer().order(ByteOrder.nativeOrder());
         short depthSample = buffer.getShort(byteIndex);
 
-
-
-        return depthSample;
+        /*
+        short depthRange = (short) (depthSample & 0x1FFF);
+        short depthConfidence = (short) ((depthSample >> 13) & 0x7);
+        float depthPercentage = depthConfidence == 0 ? 1.f : (depthConfidence - 1)/7f;
+         */
+        return (depthSample & 0x1FFF);
     }
 }

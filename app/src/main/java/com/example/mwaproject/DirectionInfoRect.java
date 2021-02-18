@@ -1,26 +1,24 @@
 package com.example.mwaproject;
 
-import android.graphics.Canvas;
-import android.graphics.Paint;
 import android.graphics.Rect;
-import android.graphics.drawable.shapes.Shape;
 
 public class DirectionInfoRect {
 
    public String horizontal;
-   public  String vertikal;
+   public  String vertical;
    public Rect rect;
+   public double distance;
 
     @Override
     public String toString() {
-        return  horizontal + '-' + vertikal;
+        return  horizontal + '-' + vertical;
     }
 
-    public DirectionInfoRect(String horizontal, String vertikal, Rect rect) {
+    public DirectionInfoRect(String horizontal, String vertical, Rect rect) {
         this.horizontal = horizontal;
-        this.vertikal = vertikal;
+        this.vertical = vertical;
         this.rect = rect;
+        this.distance = 0;
     }
-
 
 }

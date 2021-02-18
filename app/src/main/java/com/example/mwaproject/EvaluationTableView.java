@@ -50,18 +50,20 @@ public class EvaluationTableView {
                     String labelText = label.getText();
 
                     float confidence = label.getConfidence();
-                    float distance = 0; // TODO distance calculation
+                    double distance = 0; // TODO distance calculation
                     String position = "undefined"; // TODO position
                     Double max = 0.0;
                     // Log.i(TAG, "position " + labelText.toString());
                     for( DirectionInfoRect directionInfoRect : directionInfoGrid){
-                            Double areaOverlap = overLappingAreaPercentage(directionInfoRect.rect, detectedObject.getBoundingBox());
-                            Double overlapSelf = overLappingAreaPercentage(directionInfoRect.rect,directionInfoRect.rect);
-                            Double overlapPercentage = areaOverlap / overlapSelf;
-                            if (overlapPercentage > max){
-                                max = overlapPercentage;
-                                position = directionInfoRect.toString();
-                            }
+                        Double areaOverlap = overLappingAreaPercentage(directionInfoRect.rect, detectedObject.getBoundingBox());
+                        Double overlapSelf = overLappingAreaPercentage(directionInfoRect.rect,directionInfoRect.rect);
+                        Double overlapPercentage = areaOverlap / overlapSelf;
+                        if (overlapPercentage > max){
+                            max = overlapPercentage;
+                            position = directionInfoRect.toString();
+                        }
+                        distance = directionInfoRect.distance / 10; // in cm
+
                        /* Log.i(TAG, "position " + directionInfoRect.toString());
                         Log.i(TAG, "overlapPercentage " + overlapPercentage);*/
                     }
@@ -81,8 +83,9 @@ public class EvaluationTableView {
                     newRow.addView(labelTextView);
 
                     // Confidence
+                    String confidenceString = String.format("%.2f", confidence*100) + "%";
                     TextView confidenceTextView = new TextView(applicationContext);
-                    confidenceTextView.setText(String.valueOf(confidence));
+                    confidenceTextView.setText(confidenceString);
                     confidenceTextView.setTextColor(Color.BLACK);
                     confidenceTextView.setTextSize(16f);
                     confidenceTextView.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.FILL_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
@@ -99,8 +102,9 @@ public class EvaluationTableView {
                     newRow.addView(positionTextView);
 
                     // Distanz
+                    String distanceString = ((int)distance) + " cm";
                     TextView distanceTextView = new TextView(applicationContext);
-                    distanceTextView.setText(String.valueOf(distance));
+                    distanceTextView.setText(distanceString);
                     distanceTextView.setTextColor(Color.BLACK);
                     distanceTextView.setTextSize(16f);
                     distanceTextView.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.FILL_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
