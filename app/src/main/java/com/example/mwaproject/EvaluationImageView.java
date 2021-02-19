@@ -29,6 +29,7 @@ public class EvaluationImageView {
     public void drawEvalRectsOnImageView() {
         //Create a new image bitmap and attach a brand new canvas to it
         Bitmap tempBitmap = Bitmap.createBitmap(myBitmap.getWidth(), myBitmap.getHeight(), Bitmap.Config.ARGB_8888);
+        Log.e("MWA-Image: w,h:", myBitmap.getWidth() + " " + myBitmap.getHeight());
         Canvas tempCanvas = new Canvas(tempBitmap);
 
         //Draw the image bitmap into the cavas
@@ -47,7 +48,9 @@ public class EvaluationImageView {
 
         //Attach the canvas to the ImageView
         imageView.setImageBitmap(tempBitmap);
-        imageView.setRotation(EvaluationActivity.orientation);
+        if(myBitmap.getWidth() > myBitmap.getHeight()) {
+            imageView.setRotation(EvaluationActivity.orientation);
+        }
     }
 
     public void setDetectedObjects(List<DetectedObject> detectedObjects) {

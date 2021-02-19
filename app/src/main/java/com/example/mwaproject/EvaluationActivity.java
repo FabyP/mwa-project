@@ -270,6 +270,10 @@ public class EvaluationActivity extends AppCompatActivity {
                             }
                         });
         // Log.e("MWA", "evaluation is finished");
+        if (imageDepth16 != null) {
+            imageDepth16.close();
+            imageDepth16 = null;
+        }
     }
 
     TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
@@ -455,12 +459,13 @@ public class EvaluationActivity extends AppCompatActivity {
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraDevice.getId());
             Size[] jpegSizes = null;
             if (characteristics != null) {
-                jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.JPEG);
+                jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.DEPTH16);
             }
             // Default values
             int width = 1280;
             int height = 720;
             // set size
+
             if (jpegSizes != null && 0 < jpegSizes.length) {
                 if(jpegSizes[0].getWidth() < width || jpegSizes[0].getHeight() < height) {
                     width = jpegSizes[0].getWidth();
@@ -470,6 +475,8 @@ public class EvaluationActivity extends AppCompatActivity {
                     height = 1280;
                 }
             }
+
+
             reader = ImageReader.newInstance(width, height, ImageFormat.DEPTH16, 2);
 
             // The camera capture needs a surface to output what has been captured or being previewed
@@ -502,22 +509,14 @@ public class EvaluationActivity extends AppCompatActivity {
                                 Log.e("MWA", "READY TO DO STH WITH DEPTH16");
                                 // ShortBuffer shortBuffer = imageByteDepth16.getPlanes()
 
-                                int distance = getMillimetersDepth(imageDepth16, 50,50);
-                                Log.d("Distanz", String.valueOf(distance));
+                                // int distance = getMillimetersDepth(imageDepth16, 50,50);
+                                // Log.d("Distanz", String.valueOf(distance));
                                 evaluateImage();
                             }
                         });
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
-                } finally {
-                    /*
-                    if (imageDepth16 != null) {
-                        imageDepth16.close();
-                        imageDepth16 = null;
-                    }
-
-                     */
                 }
             };
             reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
@@ -736,8 +735,16 @@ public class EvaluationActivity extends AppCompatActivity {
 
 //    Distance Calculation
     public int getMillimetersDepth(Image depthImage, int x, int y){
+        Log.e("MWA-Daten - x,y:", x + " " + y);
+        //Log.e("MWA-Daten - w,h:", depthImage.getWidth() + " " + depthImage.getHeight());
+        if(x >= depthImage.getWidth()) {
+            x = depthImage.getWidth();
+        }
+        if(y >= depthImage.getHeight()) {
+            y = depthImage.getHeight();
+        }
         Image.Plane plane = depthImage.getPlanes()[0];
-        int byteIndex = x * plane.getPixelStride() + y * plane.getRowStride();
+        int byteIndex = 120 * plane.getPixelStride() + 213 * plane.getRowStride();
         ByteBuffer buffer = plane.getBuffer().order(ByteOrder.nativeOrder());
         short depthSample = buffer.getShort(byteIndex);
 

@@ -62,7 +62,7 @@ public class EvaluationTableView {
                             max = overlapPercentage;
                             position = directionInfoRect.toString();
                         }
-                        distance = directionInfoRect.distance / 10; // in cm
+                        distance = directionInfoRect.distance / 1000; // in m
 
                        /* Log.i(TAG, "position " + directionInfoRect.toString());
                         Log.i(TAG, "overlapPercentage " + overlapPercentage);*/
@@ -102,7 +102,7 @@ public class EvaluationTableView {
                     newRow.addView(positionTextView);
 
                     // Distanz
-                    String distanceString = ((int)distance) + " cm";
+                    String distanceString = String.format("%.2f", distance) + " m";
                     TextView distanceTextView = new TextView(applicationContext);
                     distanceTextView.setText(distanceString);
                     distanceTextView.setTextColor(Color.BLACK);
