@@ -63,13 +63,12 @@ import java.util.concurrent.TimeUnit;
 
 public class EvaluationActivity extends AppCompatActivity {
     private static final String TAG = "MwaApplication";
-    private ObjectDetector objectDetector;
 
     // Camera
     private TextureView textureView;
-    protected CameraDevice cameraDevice;
-    protected CameraCaptureSession cameraCaptureSessions;
-    protected CaptureRequest.Builder captureRequestBuilder;
+    private CameraDevice cameraDevice;
+    private CameraCaptureSession cameraCaptureSessions;
+    private CaptureRequest.Builder captureRequestBuilder;
     private final Semaphore mCameraOpenCloseLock = new Semaphore(1);
     public boolean isDepth16FormatSupported = true;
 
@@ -108,7 +107,7 @@ public class EvaluationActivity extends AppCompatActivity {
     }*/
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         verifyStoragePermissions(this);
         PreferenceManager.setDefaultValues(this,R.xml.preferences,false);
@@ -192,6 +191,7 @@ public class EvaluationActivity extends AppCompatActivity {
         Toast.makeText(this, modelType.toString(),
                 Toast.LENGTH_SHORT).show();
 
+        ObjectDetector objectDetector;
         switch(modelType) {
             default:
                 ObjectDetectorOptions objectDetectorOptions = new ObjectDetectorOptions.Builder()
@@ -203,11 +203,11 @@ public class EvaluationActivity extends AppCompatActivity {
                 break;
             case "OBJECT_LABELER_V1_1":
                 Log.e("EVA: Detector", "OBJECT_LABELER_V1_1");
-                objectDetector=  getCustomObjectDetector("lite-model_object_detection_mobile_object_labeler_v1_1.tflite");
+                objectDetector =  getCustomObjectDetector("lite-model_object_detection_mobile_object_labeler_v1_1.tflite");
                 break;
             case "MOBILENET_V2_1":
                 Log.e("EVA: Detector", "MOBILENET_V2_1");
-                objectDetector=  getCustomObjectDetector("mobilenet_v2_1.0_224_1_metadata_1.tflite");
+                objectDetector =  getCustomObjectDetector("mobilenet_v2_1.0_224_1_metadata_1.tflite");
                 break;
         }
 
@@ -320,13 +320,13 @@ public class EvaluationActivity extends AppCompatActivity {
         }
     };
 
-    protected void startBackgroundThread() {
+    private void startBackgroundThread() {
         mBackgroundThread = new HandlerThread("Camera Background");
         mBackgroundThread.start();
         mBackgroundHandler = new Handler(mBackgroundThread.getLooper());
     }
 
-    protected void stopBackgroundThread() {
+    private void stopBackgroundThread() {
         if(mBackgroundThread != null) {
             mBackgroundThread.quitSafely();
             try {
@@ -340,7 +340,7 @@ public class EvaluationActivity extends AppCompatActivity {
     }
 
     // Take a picture in jpeg format
-    protected synchronized void takePicture() {
+    private synchronized void takePicture() {
         isReadyForNextPicture = false;
         imageDepth16 = null;
         verifyStoragePermissions(this);
@@ -357,19 +357,23 @@ public class EvaluationActivity extends AppCompatActivity {
             }
             // Default values
 
-            int width = 1280;
-            int height = 720;
+            int width = 800;
+            int height = 480;
             // set size
+
             if (jpegSizes != null && 0 < jpegSizes.length) {
                 if(jpegSizes[0].getWidth() < width || jpegSizes[0].getHeight() < height) {
                     width = jpegSizes[0].getWidth();
                     height = jpegSizes[0].getHeight();
                 } else if(jpegSizes[0].getWidth() < jpegSizes[0].getHeight()) {
-                    width = 720;
-                    height = 1280;
+                    width = 480;
+                    height = 800;
                 }
             }
+
+
             reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 2);
+            Log.e("MWA-READER", "w,h: " +reader.getWidth() + " " + reader.getHeight());
 
             // The camera capture needs a surface to output what has been captured or being previewed
             List<Surface> outputSurfaces = new ArrayList<>(2);
@@ -448,7 +452,7 @@ public class EvaluationActivity extends AppCompatActivity {
     }
 
     // Take image in depth16 format
-    protected synchronized void takeDepthPicture() {
+    private synchronized void takeDepthPicture() {
         verifyStoragePermissions(this);
         if(null == cameraDevice) {
             return;
@@ -462,8 +466,8 @@ public class EvaluationActivity extends AppCompatActivity {
                 jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.DEPTH16);
             }
             // Default values
-            int width = 1280;
-            int height = 720;
+            int width = 800;
+            int height = 480;
             // set size
 
             if (jpegSizes != null && 0 < jpegSizes.length) {
@@ -471,8 +475,8 @@ public class EvaluationActivity extends AppCompatActivity {
                     width = jpegSizes[0].getWidth();
                     height = jpegSizes[0].getHeight();
                 } else if(jpegSizes[0].getWidth() < jpegSizes[0].getHeight()) {
-                    width = 720;
-                    height = 1280;
+                    width = 480;
+                    height = 800;
                 }
             }
 
@@ -552,7 +556,7 @@ public class EvaluationActivity extends AppCompatActivity {
         }
     }
 
-    protected void createCameraPreview() {
+    private void createCameraPreview() {
         try {
             Log.e("MWA", "createCameraPreview");
             SurfaceTexture texture = textureView.getSurfaceTexture();
@@ -621,7 +625,7 @@ public class EvaluationActivity extends AppCompatActivity {
         }
     }
 
-    protected void updatePreview() {
+    private void updatePreview() {
         Log.e("MWA", "updatePreview");
         if (null == cameraDevice) {
             Log.e("MWA", "updatePreview error, return");
@@ -670,7 +674,7 @@ public class EvaluationActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onResume() {
+    public void onResume() {
         super.onResume();
         imageDepth16 = null;
         imageByteJPG = null;
@@ -683,7 +687,7 @@ public class EvaluationActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onPause() {
+    public void onPause() {
         Log.e("MWA", "onPause");
         closeCamera();
         stopBackgroundThread();
