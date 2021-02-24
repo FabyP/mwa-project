@@ -706,9 +706,17 @@ public class EvaluationActivity extends AppCompatActivity {
                 startActivity(intent);
                 return true;
             // Code for action_status and other cases...
+            case R.id.help:
+                openInfoDialog();
+                return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public void openInfoDialog(){
+        InfoDialog infoDialog = new InfoDialog();
+        infoDialog.show(getSupportFragmentManager(), "info dialog");
     }
 
     public static void verifyStoragePermissions(Activity activity) {
