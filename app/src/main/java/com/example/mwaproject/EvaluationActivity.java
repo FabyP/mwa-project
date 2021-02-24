@@ -40,7 +40,11 @@ import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
+import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TableLayout;
 import android.widget.Toast;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -66,6 +70,9 @@ public class EvaluationActivity extends AppCompatActivity {
 
     // Camera
     private TextureView textureView;
+    private Button takeImageButton;
+    private LinearLayout evaluationLayout;
+
     private CameraDevice cameraDevice;
     private CameraCaptureSession cameraCaptureSessions;
     private CaptureRequest.Builder captureRequestBuilder;
@@ -101,6 +108,9 @@ public class EvaluationActivity extends AppCompatActivity {
     private ArrayList<DirectionInfoRect> directionInfoGrid;
     private List<DetectedObject> detectedObjectList;
 
+    private int imageLongSide = 1280;
+    private int imageShortSide = 960;
+
     /*public enum ModelType {
         DEFAULT,
         OBJECT_LABELER_V1_1
@@ -113,28 +123,27 @@ public class EvaluationActivity extends AppCompatActivity {
         PreferenceManager.setDefaultValues(this,R.xml.preferences,false);
         setContentView(R.layout.activity_evaluation);
         textureView = findViewById(R.id.texture);
+        evaluationLayout = findViewById(R.id.evaluationLinearLayout);
+        takeImageButton = findViewById(R.id.photoButton);
+        takeImageButton.setOnClickListener(v -> prepareForTakingImage());
+
         assert textureView != null;
         textureView.setSurfaceTextureListener(textureListener);
         if(imageByteJPG != null) {
             textureView.setVisibility(View.GONE);
+            takeImageButton.setVisibility(View.VISIBLE);
         } else {
             textureView.setVisibility(View.VISIBLE);
+            takeImageButton.setVisibility(View.GONE);
         }
+
 
         // Recognize double tap on screen, take a picture and change activity
         findViewById(R.id.cameraLayoutId).setOnTouchListener(new View.OnTouchListener() {
             private final GestureDetector gestureDetector = new GestureDetector(EvaluationActivity.this, new GestureDetector.SimpleOnGestureListener() {
                 @Override
                 public boolean onDoubleTap(MotionEvent e) {
-                    if(isReadyForNextPicture) {
-                        Log.e("MWA", "onDoubleTap");
-                        takePicture();
-                    } else {
-                        Log.e("MWA", "Reset camera - try it again");
-                        closeCamera();
-                        stopBackgroundThread();
-                        onResume();
-                    }
+                    prepareForTakingImage();
                     return super.onDoubleTap(e);
                 }
             });
@@ -150,6 +159,18 @@ public class EvaluationActivity extends AppCompatActivity {
             }
         });
 
+    }
+
+    private void prepareForTakingImage() {
+        if(isReadyForNextPicture) {
+            Log.e("MWA", "onDoubleTap");
+            takePicture();
+        } else {
+            Log.e("MWA", "Reset camera - try it again");
+            closeCamera();
+            stopBackgroundThread();
+            onResume();
+        }
     }
 
     private ObjectDetector getCustomObjectDetector(String modelName) {
@@ -173,8 +194,10 @@ public class EvaluationActivity extends AppCompatActivity {
         // Log.e("EvaluateImage", "Evaluation Start");
         if(imageByteJPG != null) {
             textureView.setVisibility(View.GONE);
+            takeImageButton.setVisibility(View.VISIBLE);
         } else {
             textureView.setVisibility(View.VISIBLE);
+            takeImageButton.setVisibility(View.GONE);
         }
 
         //ModelType modelType = (ModelType) intent.getSerializableExtra("modelType");
@@ -249,7 +272,17 @@ public class EvaluationActivity extends AppCompatActivity {
                                 detectedObjectList = detectedObjects;
 
                                 ImageView imageView = findViewById(R.id.imageView);
+/*
+                                RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(
+                                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                                        LinearLayout.LayoutParams.WRAP_CONTENT);
+                                layoutParams.setMargins(0, getStatusBarHeight(), 0, 0);
+
+                                evaluationLayout.setLayoutParams(layoutParams);
+ */
+
                                 EvaluationImageView evaluationView = new EvaluationImageView(imageView, myBitmap, rotation);
+
                                 //evaluationView.setDirectionInfoObjects(directionInfoGrid); useful for debugging the grid
                                 evaluationView.setDetectedObjects(detectedObjectList);
                                 evaluationView.drawEvalRectsOnImageView();
@@ -274,6 +307,15 @@ public class EvaluationActivity extends AppCompatActivity {
             imageDepth16.close();
             imageDepth16 = null;
         }
+    }
+
+    public static int getStatusBarHeight() {
+        int result = 0;
+        int resourceId = MwaApplication.getAppContext().getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result =  MwaApplication.getAppContext().getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
     }
 
     TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
@@ -357,8 +399,8 @@ public class EvaluationActivity extends AppCompatActivity {
             }
             // Default values
 
-            int width = 800;
-            int height = 480;
+            int width = imageLongSide;
+            int height = imageShortSide;
             // set size
 
             if (jpegSizes != null && 0 < jpegSizes.length) {
@@ -366,8 +408,8 @@ public class EvaluationActivity extends AppCompatActivity {
                     width = jpegSizes[0].getWidth();
                     height = jpegSizes[0].getHeight();
                 } else if(jpegSizes[0].getWidth() < jpegSizes[0].getHeight()) {
-                    width = 480;
-                    height = 800;
+                    width = imageShortSide;
+                    height = imageLongSide;
                 }
             }
 
@@ -402,6 +444,7 @@ public class EvaluationActivity extends AppCompatActivity {
                             public void run() {
                                 textureView = findViewById(R.id.texture);
                                 textureView.setVisibility(View.GONE);
+                                takeImageButton.setVisibility(View.VISIBLE);
                                 if(isDepth16FormatSupported) {
                                     takeDepthPicture();
                                 } else {
@@ -466,8 +509,8 @@ public class EvaluationActivity extends AppCompatActivity {
                 jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.DEPTH16);
             }
             // Default values
-            int width = 800;
-            int height = 480;
+            int width = imageLongSide;
+            int height = imageShortSide;
             // set size
 
             if (jpegSizes != null && 0 < jpegSizes.length) {
@@ -475,8 +518,8 @@ public class EvaluationActivity extends AppCompatActivity {
                     width = jpegSizes[0].getWidth();
                     height = jpegSizes[0].getHeight();
                 } else if(jpegSizes[0].getWidth() < jpegSizes[0].getHeight()) {
-                    width = 480;
-                    height = 800;
+                    width = imageShortSide;
+                    height = imageLongSide;
                 }
             }
 
