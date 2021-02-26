@@ -172,7 +172,7 @@ public class EvaluationActivity extends AppCompatActivity {
                         .setAssetFilePath(modelName)
                         // or .setAbsoluteFilePath(absoluteFilePathToTfliteModel)
                         .build();
-        float threshold = (float) 0.6;
+        float threshold;
         try {
             SharedPreferences sharedPref =
                     PreferenceManager
@@ -180,6 +180,11 @@ public class EvaluationActivity extends AppCompatActivity {
             threshold = Float.parseFloat(sharedPref.getString("pref_threshold", "0.6f"));
         } catch (NumberFormatException e) {
             Log.e("MWA: Detector", "Failed to load threshold");
+            threshold = (float) 0.6;
+        }
+
+        if(threshold > 0.1 || threshold < 0){
+            threshold = (float) 0.6;
         }
 
         Toast.makeText(this, String.valueOf(threshold),
