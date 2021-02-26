@@ -47,14 +47,14 @@ public class EvaluationTableView {
             rowIndex = 1;
             List<DetectedObject.Label> objectLabels = detectedObject.getLabels();
             String position = getPosition(directionInfoGrid, detectedObject);
+            double distance = 0; // TODO distance calculation
+            distance = distance / 1000; // mit Koordinaten aus detectedObject.getBoundingBox() berechnen
             if (objectLabels.isEmpty()) {
                 addEvaluationRow(applicationContext, "Unbekannt", 0, 0, position);
             } else {
                 for (DetectedObject.Label label : detectedObject.getLabels()) {
                     String labelText = label.getText();
                     float confidence = label.getConfidence();
-                    double distance = 0; // TODO distance calculation
-                    distance = distance / 1000;
                     Log.i(TAG, "Objekt " + labelText.toString());
 
                     addEvaluationRow(applicationContext, labelText, confidence, distance, position);
@@ -70,13 +70,13 @@ public class EvaluationTableView {
         rowIndex++;
 
         // Objekt
-        TextView labelTextView = new TextView(applicationContext);
-        labelTextView.setText(labelText);
-        labelTextView.setTextColor(Color.BLACK);
-        labelTextView.setTextSize(16f);
-        labelTextView.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.FILL_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+        TextView label = new TextView(applicationContext);
+        label.setText(labelText);
+        label.setTextColor(Color.BLACK);
+        label.setTextSize(16f);
+        label.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.FILL_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
 
-        newRow.addView(labelTextView);
+        newRow.addView(label);
 
         // Confidence
         String confidenceString = String.format("%.2f", confidence * 100) + "%";
