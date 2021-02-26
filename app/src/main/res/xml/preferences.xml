@@ -9,4 +9,15 @@
         android:title="Object Detection Model auswählen"
         android:summary="%s"
         />
+
+    <EditTextPreference
+        android:name="Threshold"
+        android:enabled="true"
+        android:persistent="true"
+        android:defaultValue="0.6"
+        android:title="Schwellenwert Objekterkennung"
+        android:key="pref_threshold"
+        android:inputType="numberDecimal"
+        />
+
 </PreferenceScreen>

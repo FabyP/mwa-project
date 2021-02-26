@@ -109,11 +109,6 @@ public class EvaluationActivity extends AppCompatActivity {
     private int imageLongSide = 1280;
     private int imageShortSide = 960;
 
-    /*public enum ModelType {
-        DEFAULT,
-        OBJECT_LABELER_V1_1
-    }*/
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -177,12 +172,24 @@ public class EvaluationActivity extends AppCompatActivity {
                         .setAssetFilePath(modelName)
                         // or .setAbsoluteFilePath(absoluteFilePathToTfliteModel)
                         .build();
+        float threshold = (float) 0.6;
+        try {
+            SharedPreferences sharedPref =
+                    PreferenceManager
+                            .getDefaultSharedPreferences(this);
+            threshold = Float.parseFloat(sharedPref.getString("pref_threshold", "0.6f"));
+        } catch (NumberFormatException e) {
+            Log.e("MWA: Detector", "Failed to load threshold");
+        }
+
+        Toast.makeText(this, String.valueOf(threshold),
+                Toast.LENGTH_SHORT).show();
         CustomObjectDetectorOptions customObjectDetectorOptions =
                 new CustomObjectDetectorOptions.Builder(localModel)
                         .setDetectorMode(CustomObjectDetectorOptions.SINGLE_IMAGE_MODE)
                         .enableMultipleObjects()
                         .enableClassification()
-                        .setClassificationConfidenceThreshold(0.5f)
+                        .setClassificationConfidenceThreshold(threshold)
                         .setMaxPerObjectLabelCount(3)
                         .build();
         return ObjectDetection.getClient(customObjectDetectorOptions);
@@ -234,7 +241,7 @@ public class EvaluationActivity extends AppCompatActivity {
 
         InputImage image = InputImage.fromBitmap(myBitmap, rotation);
         Log.e("EVA: rotation", Integer.toString(rotation));
-        directionInfoGrid = getDirectionInfoRectsBySplttingImageEqually(myBitmap,3);
+        directionInfoGrid = getDirectionInfoRectsBySplittingImageEqually(myBitmap,3);
 
         //TODO: Ist berechnung korrekt ? (Es kann auch die Confidence für die Entfernung ergänzt werden)
         // Anmerkung: Berechnung der Entfernung muss mit detectedObject.getBoundingBox() erfolgen. Wahrscheinlich in der EvaluationTableView.
@@ -292,7 +299,7 @@ public class EvaluationActivity extends AppCompatActivity {
         }
     }
 
-    private ArrayList<DirectionInfoRect> getDirectionInfoRectsBySplttingImageEqually(Bitmap myBitmap, int parts) {
+    private ArrayList<DirectionInfoRect> getDirectionInfoRectsBySplittingImageEqually(Bitmap myBitmap, int parts) {
         int w = myBitmap.getWidth();
         int h = myBitmap.getHeight();
         Log.e("EVA: w", Integer.toString(w));
