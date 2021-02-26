@@ -104,7 +104,6 @@ public class EvaluationActivity extends AppCompatActivity {
     };
 
     private ArrayList<DirectionInfoRect> directionInfoGrid;
-    private List<DetectedObject> detectedObjectList;
 
     private int imageLongSide = 1280;
     private int imageShortSide = 960;
@@ -248,23 +247,11 @@ public class EvaluationActivity extends AppCompatActivity {
         Log.e("EVA: rotation", Integer.toString(rotation));
         directionInfoGrid = getDirectionInfoRectsBySplittingImageEqually(myBitmap,3);
 
-        //TODO: Ist berechnung korrekt ? (Es kann auch die Confidence für die Entfernung ergänzt werden)
-        // Anmerkung: Berechnung der Entfernung muss mit detectedObject.getBoundingBox() erfolgen. Wahrscheinlich in der EvaluationTableView.
-        // directionInfoGrid sind die Koordinaten des in gleiche Stücke geteilten Bildes. Notwendig für die Berechnung der Überlappung mit den Objekten.
-        //  directionInfoGrid -> http://2.bp.blogspot.com/-cYS1Q733Nb0/TfqVRJVd01I/AAAAAAAAADM/AjQP5ely9Bo/s1600/Square03.jpg
-        if(isDepth16FormatSupported && imageDepth16 != null) {
-            for(DirectionInfoRect infoRect: directionInfoGrid) {
-                double distance = getMillimetersDepth(imageDepth16, infoRect.rect.centerX(), infoRect.rect.centerY());
-                infoRect.distance = distance;
-            }
-        }
-
         objectDetector.process(image)
                 .addOnSuccessListener(
                         new OnSuccessListener<List<DetectedObject>>() {
                             @Override
                             public void onSuccess(List<DetectedObject> detectedObjects) {
-                                detectedObjectList = detectedObjects;
 
                                 ImageView imageView = findViewById(R.id.imageView);
 /*
@@ -275,6 +262,19 @@ public class EvaluationActivity extends AppCompatActivity {
 
                                 evaluationLayout.setLayoutParams(layoutParams);
  */
+                                List<DetectedObjectWithDistance> detectedObjectList = new ArrayList<>();
+                                if(isDepth16FormatSupported && imageDepth16 != null) {
+                                    for(DetectedObject obj: detectedObjects) {
+                                        double distance = getMillimetersDepth(imageDepth16, obj.getBoundingBox().centerX(), obj.getBoundingBox().centerY());
+                                        DetectedObjectWithDistance detectedObject = new DetectedObjectWithDistance(obj.getBoundingBox(),obj.getTrackingId(), obj.getLabels(), distance);
+                                        detectedObjectList.add(detectedObject);
+                                    }
+                                } else {
+                                    for(DetectedObject obj: detectedObjects) {
+                                        DetectedObjectWithDistance detectedObject = new DetectedObjectWithDistance(obj.getBoundingBox(), obj.getTrackingId(), obj.getLabels(), 0);
+                                        detectedObjectList.add(detectedObject);
+                                    }
+                                }
 
                                 EvaluationImageView evaluationView = new EvaluationImageView(imageView, myBitmap, rotation);
 
@@ -285,7 +285,7 @@ public class EvaluationActivity extends AppCompatActivity {
                                 TableLayout tableLayout = findViewById(R.id.tableLayout);
                                 tableLayout.removeAllViews();
                                 EvaluationTableView evaluationTableView = new EvaluationTableView(tableLayout);
-                                evaluationTableView.drawDetectedObjectInformations(getApplicationContext(), detectedObjects, directionInfoGrid);
+                                evaluationTableView.drawDetectedObjectInformations(getApplicationContext(), detectedObjectList, directionInfoGrid);
                             }
                         })
                 .addOnFailureListener(

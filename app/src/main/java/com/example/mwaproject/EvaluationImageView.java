@@ -53,7 +53,7 @@ public class EvaluationImageView {
         }
     }
 
-    public void setDetectedObjects(List<DetectedObject> detectedObjects) {
+    public void setDetectedObjects(List<DetectedObjectWithDistance> detectedObjects) {
         for (final DetectedObject detectedObject : detectedObjects) {
             Rect boundingBox = detectedObject.getBoundingBox();
             detectedObjectRects.add(boundingBox);

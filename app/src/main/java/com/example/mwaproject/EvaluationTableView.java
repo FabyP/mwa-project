@@ -26,7 +26,7 @@ public class EvaluationTableView {
         this.tableLayout = tableLayout;
     }
 
-    public void drawDetectedObjectInformations(Context applicationContext, List<DetectedObject> detectedObjects, ArrayList<DirectionInfoRect> directionInfoGrid) {
+    public void drawDetectedObjectInformations(Context applicationContext, List<DetectedObjectWithDistance> detectedObjects, ArrayList<DirectionInfoRect> directionInfoGrid) {
         String[] headLabels = {"Objekt", "Confidence", "Position", "Distanz"};
         TableRow headRow = new TableRow(applicationContext);
         headRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
@@ -43,12 +43,12 @@ public class EvaluationTableView {
             headRow.addView(labelTextView);
         }
         tableLayout.addView(headRow, new TableLayout.LayoutParams(TableLayout.LayoutParams.FILL_PARENT, TableLayout.LayoutParams.WRAP_CONTENT));
-        for (DetectedObject detectedObject : detectedObjects) {
+        for (DetectedObjectWithDistance detectedObject : detectedObjects) {
             rowIndex = 1;
             List<DetectedObject.Label> objectLabels = detectedObject.getLabels();
             String position = getPosition(directionInfoGrid, detectedObject);
-            double distance = 0; // TODO distance calculation
-            distance = distance / 1000; // mit Koordinaten aus detectedObject.getBoundingBox() berechnen
+            double distance = detectedObject.getDistance();
+            distance = distance / 1000;
             if (objectLabels.isEmpty()) {
                 addEvaluationRow(applicationContext, "Unbekannt", 0, 0, position);
             } else {
@@ -98,7 +98,7 @@ public class EvaluationTableView {
         newRow.addView(positionTextView);
 
         // Distanz
-        String distanceString = String.format("%.2f", distance) + " m";
+        String distanceString = String.format("%.2f", distance / 1000) + " m";
         TextView distanceTextView = new TextView(applicationContext);
         distanceTextView.setText(distanceString);
         distanceTextView.setTextColor(Color.BLACK);
