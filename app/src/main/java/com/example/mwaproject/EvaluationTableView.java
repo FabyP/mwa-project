@@ -20,6 +20,7 @@ public class EvaluationTableView {
     private static final String TAG = "MwaApplication";
 
     public TableLayout tableLayout;
+    private int rowIndex;
 
     public EvaluationTableView(TableLayout tableLayout) {
         this.tableLayout = tableLayout;
@@ -31,7 +32,7 @@ public class EvaluationTableView {
         headRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
         tableLayout.setStretchAllColumns(true);
         headRow.setId(0);
-        for (String headLabel : headLabels){
+        for (String headLabel : headLabels) {
             TextView labelTextView = new TextView(applicationContext);
 
             labelTextView.setText(headLabel);
@@ -42,72 +43,81 @@ public class EvaluationTableView {
             headRow.addView(labelTextView);
         }
         tableLayout.addView(headRow, new TableLayout.LayoutParams(TableLayout.LayoutParams.FILL_PARENT, TableLayout.LayoutParams.WRAP_CONTENT));
-        for ( DetectedObject detectedObject : detectedObjects) {
-                int rowIndex = 1;
+        for (DetectedObject detectedObject : detectedObjects) {
+            rowIndex = 1;
+            List<DetectedObject.Label> objectLabels = detectedObject.getLabels();
+            String position = getPosition(directionInfoGrid, detectedObject);
+            if (objectLabels.isEmpty()) {
+                addEvaluationRow(applicationContext, "Unbekannt", 0, 0, position);
+            } else {
                 for (DetectedObject.Label label : detectedObject.getLabels()) {
                     String labelText = label.getText();
                     float confidence = label.getConfidence();
                     double distance = 0; // TODO distance calculation
                     distance = distance / 1000;
-                    String position = getPosition(directionInfoGrid, detectedObject);
                     Log.i(TAG, "Objekt " + labelText.toString());
 
-                    TableRow newRow = new TableRow(applicationContext);
-                    newRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
-                    newRow.setId(rowIndex);
-                    rowIndex++;
-
-                    // Objekt
-                    TextView labelTextView = new TextView(applicationContext);
-                    labelTextView.setText(labelText);
-                    labelTextView.setTextColor(Color.BLACK);
-                    labelTextView.setTextSize(16f);
-                    labelTextView.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.FILL_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
-
-                    newRow.addView(labelTextView);
-
-                    // Confidence
-                    String confidenceString = String.format("%.2f", confidence*100) + "%";
-                    TextView confidenceTextView = new TextView(applicationContext);
-                    confidenceTextView.setText(confidenceString);
-                    confidenceTextView.setTextColor(Color.BLACK);
-                    confidenceTextView.setTextSize(16f);
-                    confidenceTextView.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.FILL_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
-
-                    newRow.addView(confidenceTextView);
-
-                    // Position
-                    TextView positionTextView = new TextView(applicationContext);
-                    positionTextView.setText(position);
-                    positionTextView.setTextColor(Color.BLACK);
-                    positionTextView.setTextSize(16f);
-                    positionTextView.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.FILL_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
-
-                    newRow.addView(positionTextView);
-
-                    // Distanz
-                    String distanceString = String.format("%.2f", distance) + " m";
-                    TextView distanceTextView = new TextView(applicationContext);
-                    distanceTextView.setText(distanceString);
-                    distanceTextView.setTextColor(Color.BLACK);
-                    distanceTextView.setTextSize(16f);
-                    distanceTextView.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.FILL_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
-
-                    newRow.addView(distanceTextView);
-
-                    tableLayout.addView(newRow, new TableLayout.LayoutParams(TableLayout.LayoutParams.FILL_PARENT, TableLayout.LayoutParams.WRAP_CONTENT));
+                    addEvaluationRow(applicationContext, labelText, confidence, distance, position);
                 }
             }
+        }
     }
 
-    private String getPosition( ArrayList<DirectionInfoRect> directionInfoGrid, DetectedObject detectedObject) {
+    private void addEvaluationRow(Context applicationContext, String labelText, float confidence, double distance, String position) {
+        TableRow newRow = new TableRow(applicationContext);
+        newRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
+        newRow.setId(rowIndex);
+        rowIndex++;
+
+        // Objekt
+        TextView labelTextView = new TextView(applicationContext);
+        labelTextView.setText(labelText);
+        labelTextView.setTextColor(Color.BLACK);
+        labelTextView.setTextSize(16f);
+        labelTextView.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.FILL_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+        newRow.addView(labelTextView);
+
+        // Confidence
+        String confidenceString = String.format("%.2f", confidence * 100) + "%";
+        TextView confidenceTextView = new TextView(applicationContext);
+        confidenceTextView.setText(confidenceString);
+        confidenceTextView.setTextColor(Color.BLACK);
+        confidenceTextView.setTextSize(16f);
+        confidenceTextView.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.FILL_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+        newRow.addView(confidenceTextView);
+
+        // Position
+        TextView positionTextView = new TextView(applicationContext);
+        positionTextView.setText(position);
+        positionTextView.setTextColor(Color.BLACK);
+        positionTextView.setTextSize(16f);
+        positionTextView.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.FILL_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+        newRow.addView(positionTextView);
+
+        // Distanz
+        String distanceString = String.format("%.2f", distance) + " m";
+        TextView distanceTextView = new TextView(applicationContext);
+        distanceTextView.setText(distanceString);
+        distanceTextView.setTextColor(Color.BLACK);
+        distanceTextView.setTextSize(16f);
+        distanceTextView.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.FILL_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+        newRow.addView(distanceTextView);
+
+        tableLayout.addView(newRow, new TableLayout.LayoutParams(TableLayout.LayoutParams.FILL_PARENT, TableLayout.LayoutParams.WRAP_CONTENT));
+    }
+
+    private String getPosition(ArrayList<DirectionInfoRect> directionInfoGrid, DetectedObject detectedObject) {
         String position = "undefined";
         Double max = 0.0;
-        for( DirectionInfoRect directionInfoRect : directionInfoGrid){
+        for (DirectionInfoRect directionInfoRect : directionInfoGrid) {
             Double areaOverlap = overLappingAreaPercentage(directionInfoRect.rect, detectedObject.getBoundingBox());
-            Double overlapSelf = overLappingAreaPercentage(directionInfoRect.rect,directionInfoRect.rect);
+            Double overlapSelf = overLappingAreaPercentage(directionInfoRect.rect, directionInfoRect.rect);
             Double overlapPercentage = areaOverlap / overlapSelf;
-            if (overlapPercentage > max){
+            if (overlapPercentage > max) {
                 max = overlapPercentage;
                 position = directionInfoRect.toString();
             }
@@ -119,7 +129,7 @@ public class EvaluationTableView {
     }
 
     private double overLappingAreaPercentage(Rect rect1, Rect rect2) {
-       int  x_overlap = Math.max(0, Math.min(rect1.right, rect2.right) - Math.max(rect1.left, rect2.left));
+        int x_overlap = Math.max(0, Math.min(rect1.right, rect2.right) - Math.max(rect1.left, rect2.left));
         int y_overlap = Math.max(0, Math.min(rect1.bottom, rect2.bottom) - Math.max(rect1.top, rect2.top));
         return x_overlap * y_overlap;
     }
