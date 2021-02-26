@@ -15,7 +15,7 @@ import java.util.List;
 
 public class EvaluationImageView {
 
-    public List<Rect> rects = new ArrayList<>();
+    public List<Rect> detectedObjectRects = new ArrayList<>();
     public ImageView imageView;
     public Bitmap myBitmap;
     public int rotation;
@@ -41,7 +41,7 @@ public class EvaluationImageView {
         myPaint.setStrokeWidth(9);
         myPaint.setStyle(Paint.Style.STROKE);
 
-        for (Rect rect : rects) {
+        for (Rect rect : detectedObjectRects) {
             Log.e("EVA: rect", rect.toString());
             tempCanvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, myPaint);
         }
@@ -56,14 +56,14 @@ public class EvaluationImageView {
     public void setDetectedObjects(List<DetectedObject> detectedObjects) {
         for (final DetectedObject detectedObject : detectedObjects) {
             Rect boundingBox = detectedObject.getBoundingBox();
-            rects.add(boundingBox);
+            detectedObjectRects.add(boundingBox);
         }
     }
 
     public void setDirectionInfoObjects(ArrayList<DirectionInfoRect> directionInfoGrid) {
         for (final DirectionInfoRect singleDirectionInfoGrid : directionInfoGrid) {
             Rect rect = singleDirectionInfoGrid.rect;
-            rects.add(rect);
+            detectedObjectRects.add(rect);
         }
     }
 }

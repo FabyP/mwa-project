@@ -41,10 +41,8 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.TableLayout;
 import android.widget.Toast;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -235,28 +233,13 @@ public class EvaluationActivity extends AppCompatActivity {
         }
 
         InputImage image = InputImage.fromBitmap(myBitmap, rotation);
-        int w = myBitmap.getWidth();
-        int h = myBitmap.getHeight();
-        Log.e("EVA: w", Integer.toString(w));
-        Log.e("EVA: h", Integer.toString(h));
         Log.e("EVA: rotation", Integer.toString(rotation));
-        String[] verticalDirections = {"Rechts", "Mitte", "Links", };
-        String[] horizontalDirections = {"Oben", "Mitte", "Unten", };
-        int verticalCounter = 0;
-        int horizontalCounter = 0;
-        directionInfoGrid = new ArrayList<>();
-
-        for(int x = 0; x < w; x = x + (int) Math.ceil((double)w / 3)){
-            for(int y = 0; y < h; y = y + (h/3)){
-                Rect rect = new Rect(x, y, x +  (w/3), y +  (h/3));
-                DirectionInfoRect directionInfoRect = new DirectionInfoRect(horizontalDirections[horizontalCounter % 3], verticalDirections[verticalCounter % 3], rect);
-                directionInfoGrid.add(directionInfoRect);
-                verticalCounter++;
-            }
-            horizontalCounter++;
-        }
+        directionInfoGrid = getDirectionInfoRectsBySplttingImageEqually(myBitmap,3);
 
         //TODO: Ist berechnung korrekt ? (Es kann auch die Confidence für die Entfernung ergänzt werden)
+        // Anmerkung: Berechnung der Entfernung muss mit detectedObject.getBoundingBox() erfolgen. Wahrscheinlich in der EvaluationTableView.
+        // directionInfoGrid sind die Koordinaten des in gleiche Stücke geteilten Bildes. Notwendig für die Berechnung der Überlappung mit den Objekten.
+        //  directionInfoGrid -> http://2.bp.blogspot.com/-cYS1Q733Nb0/TfqVRJVd01I/AAAAAAAAADM/AjQP5ely9Bo/s1600/Square03.jpg
         if(isDepth16FormatSupported && imageDepth16 != null) {
             for(DirectionInfoRect infoRect: directionInfoGrid) {
                 double distance = getMillimetersDepth(imageDepth16, infoRect.rect.centerX(), infoRect.rect.centerY());
@@ -307,6 +290,30 @@ public class EvaluationActivity extends AppCompatActivity {
             imageDepth16.close();
             imageDepth16 = null;
         }
+    }
+
+    private ArrayList<DirectionInfoRect> getDirectionInfoRectsBySplttingImageEqually(Bitmap myBitmap, int parts) {
+        int w = myBitmap.getWidth();
+        int h = myBitmap.getHeight();
+        Log.e("EVA: w", Integer.toString(w));
+        Log.e("EVA: h", Integer.toString(h));
+        String[] verticalDirections = {"Rechts", "Mitte", "Links", };
+        String[] horizontalDirections = {"Oben", "Mitte", "Unten", };
+        int verticalCounter = 0;
+        int horizontalCounter = 0;
+        directionInfoGrid = new ArrayList<>();
+
+        for(int x = 0; x < w; x = x + (int) Math.ceil((double)w / parts)){
+            for(int y = 0; y < h; y = y + (h/parts)){
+                Rect rect = new Rect(x, y, x +  (w/parts), y +  (h/parts));
+                DirectionInfoRect directionInfoRect = new DirectionInfoRect(horizontalDirections[horizontalCounter % parts], verticalDirections[verticalCounter % parts], rect);
+                directionInfoGrid.add(directionInfoRect);
+                verticalCounter++;
+            }
+            horizontalCounter++;
+        }
+
+        return directionInfoGrid;
     }
 
     public static int getStatusBarHeight() {

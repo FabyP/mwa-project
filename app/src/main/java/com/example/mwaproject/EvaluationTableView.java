@@ -42,31 +42,15 @@ public class EvaluationTableView {
             headRow.addView(labelTextView);
         }
         tableLayout.addView(headRow, new TableLayout.LayoutParams(TableLayout.LayoutParams.FILL_PARENT, TableLayout.LayoutParams.WRAP_CONTENT));
-          for ( DetectedObject detectedObject : detectedObjects) {
-
+        for ( DetectedObject detectedObject : detectedObjects) {
                 int rowIndex = 1;
-
                 for (DetectedObject.Label label : detectedObject.getLabels()) {
                     String labelText = label.getText();
-
                     float confidence = label.getConfidence();
                     double distance = 0; // TODO distance calculation
-                    String position = "undefined"; // TODO position
-                    Double max = 0.0;
-                    // Log.i(TAG, "position " + labelText.toString());
-                    for( DirectionInfoRect directionInfoRect : directionInfoGrid){
-                        Double areaOverlap = overLappingAreaPercentage(directionInfoRect.rect, detectedObject.getBoundingBox());
-                        Double overlapSelf = overLappingAreaPercentage(directionInfoRect.rect,directionInfoRect.rect);
-                        Double overlapPercentage = areaOverlap / overlapSelf;
-                        if (overlapPercentage > max){
-                            max = overlapPercentage;
-                            position = directionInfoRect.toString();
-                        }
-                        distance = directionInfoRect.distance / 1000; // in m
-
-                       /* Log.i(TAG, "position " + directionInfoRect.toString());
-                        Log.i(TAG, "overlapPercentage " + overlapPercentage);*/
-                    }
+                    distance = distance / 1000;
+                    String position = getPosition(directionInfoGrid, detectedObject);
+                    Log.i(TAG, "Objekt " + labelText.toString());
 
                     TableRow newRow = new TableRow(applicationContext);
                     newRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
@@ -114,6 +98,24 @@ public class EvaluationTableView {
                     tableLayout.addView(newRow, new TableLayout.LayoutParams(TableLayout.LayoutParams.FILL_PARENT, TableLayout.LayoutParams.WRAP_CONTENT));
                 }
             }
+    }
+
+    private String getPosition( ArrayList<DirectionInfoRect> directionInfoGrid, DetectedObject detectedObject) {
+        String position = "undefined";
+        Double max = 0.0;
+        for( DirectionInfoRect directionInfoRect : directionInfoGrid){
+            Double areaOverlap = overLappingAreaPercentage(directionInfoRect.rect, detectedObject.getBoundingBox());
+            Double overlapSelf = overLappingAreaPercentage(directionInfoRect.rect,directionInfoRect.rect);
+            Double overlapPercentage = areaOverlap / overlapSelf;
+            if (overlapPercentage > max){
+                max = overlapPercentage;
+                position = directionInfoRect.toString();
+            }
+
+           /* Log.i(TAG, "position " + directionInfoRect.toString());
+            Log.i(TAG, "overlapPercentage " + overlapPercentage);*/
+        }
+        return position;
     }
 
     private double overLappingAreaPercentage(Rect rect1, Rect rect2) {
