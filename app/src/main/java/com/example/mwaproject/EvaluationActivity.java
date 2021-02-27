@@ -182,7 +182,7 @@ public class EvaluationActivity extends AppCompatActivity {
             threshold = (float) 0.6;
         }
 
-        if(threshold > 0.1 || threshold < 0){
+        if(threshold > 1 || threshold < 0){
             threshold = (float) 0.6;
         }
 
