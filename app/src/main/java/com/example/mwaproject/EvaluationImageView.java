@@ -5,14 +5,14 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.util.Log;
 import android.widget.ImageView;
-
 import com.google.mlkit.vision.objects.DetectedObject;
-
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * View to show the taken image
+ */
 public class EvaluationImageView {
 
     public List<Rect> detectedObjectRects = new ArrayList<>();
@@ -26,27 +26,28 @@ public class EvaluationImageView {
         this.rotation = rotation;
     }
 
+    /**
+     * Draws the bounding box of detected objects in the image
+     */
     public void drawEvalRectsOnImageView() {
-        //Create a new image bitmap and attach a brand new canvas to it
+        // Create a new image bitmap and attach a brand new canvas to it
         Bitmap tempBitmap = Bitmap.createBitmap(myBitmap.getWidth(), myBitmap.getHeight(), Bitmap.Config.ARGB_8888);
-        Log.e("MWA-Image: w,h:", myBitmap.getWidth() + " " + myBitmap.getHeight());
         Canvas tempCanvas = new Canvas(tempBitmap);
 
-        //Draw the image bitmap into the cavas
+        // Draw the image bitmap into the canvas
         tempCanvas.drawBitmap(myBitmap, 0, 0, null);
 
-        //Draw everything else you want into the canvas, in this example a rectangle with rounded edges
+        // Draw everything else you want into the canvas, in this example a rectangle with rounded edges
         Paint myPaint = new Paint();
         myPaint.setColor(Color.rgb(255, 0, 0));
         myPaint.setStrokeWidth(9);
         myPaint.setStyle(Paint.Style.STROKE);
 
         for (Rect rect : detectedObjectRects) {
-            Log.e("EVA: rect", rect.toString());
             tempCanvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, myPaint);
         }
 
-        //Attach the canvas to the ImageView
+        // Attach the canvas to the ImageView
         imageView.setImageBitmap(tempBitmap);
         if(myBitmap.getWidth() > myBitmap.getHeight()) {
             imageView.setRotation(EvaluationActivity.orientation);

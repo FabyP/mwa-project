@@ -7,17 +7,14 @@ import android.util.Log;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
-
 import com.google.mlkit.vision.objects.DetectedObject;
-
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-
+/**
+ * Table with details about the detected objects
+ */
 public class EvaluationTableView {
-    private static final String TAG = "MwaApplication";
 
     public TableLayout tableLayout;
     private int rowIndex;
@@ -26,6 +23,12 @@ public class EvaluationTableView {
         this.tableLayout = tableLayout;
     }
 
+    /**
+     * Fill table with content
+     * @param applicationContext - context
+     * @param detectedObjects - list with detected objects with their details
+     * @param directionInfoGrid - list with nine rectangles of the image for position calculation
+     */
     public void drawDetectedObjectInformations(Context applicationContext, List<DetectedObjectWithDistance> detectedObjects, ArrayList<DirectionInfoRect> directionInfoGrid) {
         String[] headLabels = {"Objekt", "Confidence", "Position", "Distanz"};
         TableRow headRow = new TableRow(applicationContext);
@@ -54,21 +57,27 @@ public class EvaluationTableView {
                 for (DetectedObject.Label label : detectedObject.getLabels()) {
                     String labelText = label.getText();
                     float confidence = label.getConfidence();
-                    Log.i(TAG, "Objekt " + labelText.toString());
-
                     addEvaluationRow(applicationContext, labelText, confidence, distance, position);
                 }
             }
         }
     }
 
+    /**
+     * Generate the value of each column of a row
+     * @param applicationContext - context
+     * @param labelText - object name
+     * @param confidence - confidence that object detection is correct
+     * @param distance - distance of the object (0 if not supported or detected)
+     * @param position - object position in the image
+     */
     private void addEvaluationRow(Context applicationContext, String labelText, float confidence, double distance, String position) {
         TableRow newRow = new TableRow(applicationContext);
         newRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
         newRow.setId(rowIndex);
         rowIndex++;
 
-        // Objekt
+        // Object
         TextView label = new TextView(applicationContext);
         label.setText(labelText);
         label.setTextColor(Color.BLACK);
@@ -116,7 +125,7 @@ public class EvaluationTableView {
     }
 
     private String getPosition(ArrayList<DirectionInfoRect> directionInfoGrid, DetectedObject detectedObject) {
-        String position = "undefined";
+        String position = "Unbekannt";
         Double max = 0.0;
         for (DirectionInfoRect directionInfoRect : directionInfoGrid) {
             Double areaOverlap = overLappingAreaPercentage(directionInfoRect.rect, detectedObject.getBoundingBox());
@@ -126,9 +135,6 @@ public class EvaluationTableView {
                 max = overlapPercentage;
                 position = directionInfoRect.toString();
             }
-
-           /* Log.i(TAG, "position " + directionInfoRect.toString());
-            Log.i(TAG, "overlapPercentage " + overlapPercentage);*/
         }
         return position;
     }
