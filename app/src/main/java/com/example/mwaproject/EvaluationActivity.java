@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.preference.PreferenceManager;
+
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
@@ -45,6 +46,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TableLayout;
 import android.widget.Toast;
+
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.mlkit.common.model.LocalModel;
@@ -54,6 +56,7 @@ import com.google.mlkit.vision.objects.ObjectDetection;
 import com.google.mlkit.vision.objects.ObjectDetector;
 import com.google.mlkit.vision.objects.custom.CustomObjectDetectorOptions;
 import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -112,7 +115,7 @@ public class EvaluationActivity extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         verifyStoragePermissions(this);
-        PreferenceManager.setDefaultValues(this,R.xml.preferences,false);
+        PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
         setContentView(R.layout.activity_evaluation);
         textureView = findViewById(R.id.texture);
         evaluationLayout = findViewById(R.id.evaluationLinearLayout);
@@ -121,7 +124,7 @@ public class EvaluationActivity extends AppCompatActivity {
 
         assert textureView != null;
         textureView.setSurfaceTextureListener(textureListener);
-        if(imageByteJPG != null) {
+        if (imageByteJPG != null) {
             textureView.setVisibility(View.GONE);
             takeImageButton.setVisibility(View.VISIBLE);
         } else {
@@ -154,7 +157,7 @@ public class EvaluationActivity extends AppCompatActivity {
     }
 
     private void prepareForTakingImage() {
-        if(isReadyForNextPicture) {
+        if (isReadyForNextPicture) {
             Log.e("MWA", "onDoubleTap");
             takePicture();
         } else {
@@ -182,7 +185,7 @@ public class EvaluationActivity extends AppCompatActivity {
             threshold = (float) 0.6;
         }
 
-        if(threshold > 1 || threshold < 0){
+        if (threshold > 1 || threshold < 0) {
             threshold = (float) 0.6;
         }
 
@@ -200,8 +203,7 @@ public class EvaluationActivity extends AppCompatActivity {
     }
 
     private void evaluateImage() {
-        // Log.e("EvaluateImage", "Evaluation Start");
-        if(imageByteJPG != null) {
+        if (imageByteJPG != null) {
             textureView.setVisibility(View.GONE);
             takeImageButton.setVisibility(View.VISIBLE);
         } else {
@@ -211,20 +213,20 @@ public class EvaluationActivity extends AppCompatActivity {
 
         //ModelType modelType = (ModelType) intent.getSerializableExtra("modelType");
 
-        byte[] byteArray = imageByteJPG;
+        // byte[] byteArray = imageByteJPG;
 
-        Bitmap myBitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
+        Bitmap myBitmap = BitmapFactory.decodeByteArray(imageByteJPG, 0, imageByteJPG.length);
         int rotation = getWindowManager().getDefaultDisplay().getRotation();
         SharedPreferences sharedPref =
                 PreferenceManager
                         .getDefaultSharedPreferences(this);
         String modelType = sharedPref.getString
-                (SettingsActivity.KEY_PREF_EVALUATION_MODEL,"DEFAULT");
+                (SettingsActivity.KEY_PREF_EVALUATION_MODEL, "DEFAULT");
         Toast.makeText(this, modelType.toString(),
                 Toast.LENGTH_SHORT).show();
 
         ObjectDetector objectDetector;
-        switch(modelType) {
+        switch (modelType) {
             default:
                 ObjectDetectorOptions objectDetectorOptions = new ObjectDetectorOptions.Builder()
                         .setDetectorMode(ObjectDetectorOptions.SINGLE_IMAGE_MODE)
@@ -235,17 +237,16 @@ public class EvaluationActivity extends AppCompatActivity {
                 break;
             case "OBJECT_LABELER_V1_1":
                 Log.e("EVA: Detector", "OBJECT_LABELER_V1_1");
-                objectDetector =  getCustomObjectDetector("lite-model_object_detection_mobile_object_labeler_v1_1.tflite");
+                objectDetector = getCustomObjectDetector("lite-model_object_detection_mobile_object_labeler_v1_1.tflite");
                 break;
             case "MOBILENET_V2_1":
                 Log.e("EVA: Detector", "MOBILENET_V2_1");
-                objectDetector =  getCustomObjectDetector("mobilenet_v2_1.0_224_1_metadata_1.tflite");
+                objectDetector = getCustomObjectDetector("mobilenet_v2_1.0_224_1_metadata_1.tflite");
                 break;
         }
 
         InputImage image = InputImage.fromBitmap(myBitmap, rotation);
-        Log.e("EVA: rotation", Integer.toString(rotation));
-        directionInfoGrid = getDirectionInfoRectsBySplittingImageEqually(myBitmap,3);
+        directionInfoGrid = getDirectionInfoRectsBySplittingImageEqually(myBitmap, 3);
 
         objectDetector.process(image)
                 .addOnSuccessListener(
@@ -254,23 +255,36 @@ public class EvaluationActivity extends AppCompatActivity {
                             public void onSuccess(List<DetectedObject> detectedObjects) {
 
                                 ImageView imageView = findViewById(R.id.imageView);
-/*
-                                RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(
-                                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                                        LinearLayout.LayoutParams.WRAP_CONTENT);
-                                layoutParams.setMargins(0, getStatusBarHeight(), 0, 0);
 
-                                evaluationLayout.setLayoutParams(layoutParams);
- */
                                 List<DetectedObjectWithDistance> detectedObjectList = new ArrayList<>();
-                                if(isDepth16FormatSupported && imageDepth16 != null) {
-                                    for(DetectedObject obj: detectedObjects) {
-                                        double distance = getMillimetersDepth(imageDepth16, obj.getBoundingBox().centerX(), obj.getBoundingBox().centerY());
-                                        DetectedObjectWithDistance detectedObject = new DetectedObjectWithDistance(obj.getBoundingBox(),obj.getTrackingId(), obj.getLabels(), distance);
+                                if (isDepth16FormatSupported && imageDepth16 != null) {
+                                    for (DetectedObject obj : detectedObjects) {
+                                        double distance = 0;
+                                        Rect boundingBox = obj.getBoundingBox();
+                                        List<Integer> depthValues = new ArrayList<>();
+                                        for (int x = boundingBox.left; x < boundingBox.left + boundingBox.width(); x++) {
+                                            if (x < imageDepth16.getWidth()) {
+                                                for (int y = boundingBox.top; y < boundingBox.top + boundingBox.height(); y++) {
+                                                    if (y < imageDepth16.getHeight()) {
+                                                        int d = getMillimetersDepth(x, y);
+                                                        if (d > 0) {
+                                                            depthValues.add(d);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        distance = claculateAverageDistance(depthValues);
+
+                                        DetectedObjectWithDistance detectedObject = new DetectedObjectWithDistance(obj.getBoundingBox(), obj.getTrackingId(), obj.getLabels(), distance);
                                         detectedObjectList.add(detectedObject);
                                     }
+                                    imageDepth16.close();
+                                    imageDepth16 = null;
+
                                 } else {
-                                    for(DetectedObject obj: detectedObjects) {
+                                    for (DetectedObject obj : detectedObjects) {
                                         DetectedObjectWithDistance detectedObject = new DetectedObjectWithDistance(obj.getBoundingBox(), obj.getTrackingId(), obj.getLabels(), 0);
                                         detectedObjectList.add(detectedObject);
                                     }
@@ -297,27 +311,22 @@ public class EvaluationActivity extends AppCompatActivity {
                                 Log.i(TAG, "Detected " + e);
                             }
                         });
-        // Log.e("MWA", "evaluation is finished");
-        if (imageDepth16 != null) {
-            imageDepth16.close();
-            imageDepth16 = null;
-        }
     }
 
     private ArrayList<DirectionInfoRect> getDirectionInfoRectsBySplittingImageEqually(Bitmap myBitmap, int parts) {
         int w = myBitmap.getWidth();
         int h = myBitmap.getHeight();
-        Log.e("EVA: w", Integer.toString(w));
-        Log.e("EVA: h", Integer.toString(h));
-        String[] verticalDirections = {"Rechts", "Mitte", "Links", };
-        String[] horizontalDirections = {"Oben", "Mitte", "Unten", };
+        // Log.e("EVA: w", Integer.toString(w));
+        // Log.e("EVA: h", Integer.toString(h));
+        String[] verticalDirections = {"Rechts", "Mitte", "Links",};
+        String[] horizontalDirections = {"Oben", "Mitte", "Unten",};
         int verticalCounter = 0;
         int horizontalCounter = 0;
         directionInfoGrid = new ArrayList<>();
 
-        for(int x = 0; x < w; x = x + (int) Math.ceil((double)w / parts)){
-            for(int y = 0; y < h; y = y + (h/parts)){
-                Rect rect = new Rect(x, y, x +  (w/parts), y +  (h/parts));
+        for (int x = 0; x < w; x = x + (int) Math.ceil((double) w / parts)) {
+            for (int y = 0; y < h; y = y + (h / parts)) {
+                Rect rect = new Rect(x, y, x + (w / parts), y + (h / parts));
                 DirectionInfoRect directionInfoRect = new DirectionInfoRect(horizontalDirections[horizontalCounter % parts], verticalDirections[verticalCounter % parts], rect);
                 directionInfoGrid.add(directionInfoRect);
                 verticalCounter++;
@@ -332,7 +341,7 @@ public class EvaluationActivity extends AppCompatActivity {
         int result = 0;
         int resourceId = MwaApplication.getAppContext().getResources().getIdentifier("status_bar_height", "dimen", "android");
         if (resourceId > 0) {
-            result =  MwaApplication.getAppContext().getResources().getDimensionPixelSize(resourceId);
+            result = MwaApplication.getAppContext().getResources().getDimensionPixelSize(resourceId);
         }
         return result;
     }
@@ -342,14 +351,17 @@ public class EvaluationActivity extends AppCompatActivity {
         public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
             openCamera();
         }
+
         @Override
         public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
             // Transform you image captured size according to the surface width and height
         }
+
         @Override
         public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
             return false;
         }
+
         @Override
         public void onSurfaceTextureUpdated(SurfaceTexture surface) {
         }
@@ -364,15 +376,17 @@ public class EvaluationActivity extends AppCompatActivity {
             cameraDevice = camera;
             createCameraPreview();
         }
+
         @Override
         public void onDisconnected(CameraDevice camera) {
             mCameraOpenCloseLock.release();
             cameraDevice.close();
         }
+
         @Override
         public void onError(CameraDevice camera, int error) {
             mCameraOpenCloseLock.release();
-            if(cameraDevice != null) {
+            if (cameraDevice != null) {
                 cameraDevice.close();
                 cameraDevice = null;
             } else {
@@ -388,7 +402,7 @@ public class EvaluationActivity extends AppCompatActivity {
     }
 
     private void stopBackgroundThread() {
-        if(mBackgroundThread != null) {
+        if (mBackgroundThread != null) {
             mBackgroundThread.quitSafely();
             try {
                 mBackgroundThread.join();
@@ -405,7 +419,7 @@ public class EvaluationActivity extends AppCompatActivity {
         isReadyForNextPicture = false;
         imageDepth16 = null;
         verifyStoragePermissions(this);
-        if(null == cameraDevice) {
+        if (null == cameraDevice) {
             return;
         }
         // The android CameraManager class is used to manage all the camera devices in the android device
@@ -423,10 +437,10 @@ public class EvaluationActivity extends AppCompatActivity {
             // set size
 
             if (jpegSizes != null && 0 < jpegSizes.length) {
-                if(jpegSizes[0].getWidth() < width || jpegSizes[0].getHeight() < height) {
+                if (jpegSizes[0].getWidth() < width || jpegSizes[0].getHeight() < height) {
                     width = jpegSizes[0].getWidth();
                     height = jpegSizes[0].getHeight();
-                } else if(jpegSizes[0].getWidth() < jpegSizes[0].getHeight()) {
+                } else if (jpegSizes[0].getWidth() < jpegSizes[0].getHeight()) {
                     width = imageShortSide;
                     height = imageLongSide;
                 }
@@ -434,7 +448,7 @@ public class EvaluationActivity extends AppCompatActivity {
 
 
             reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 2);
-            Log.e("MWA-READER", "w,h: " +reader.getWidth() + " " + reader.getHeight());
+            // Log.e("MWA-READER", "w,h: " +reader.getWidth() + " " + reader.getHeight());
 
             // The camera capture needs a surface to output what has been captured or being previewed
             List<Surface> outputSurfaces = new ArrayList<>(2);
@@ -456,7 +470,7 @@ public class EvaluationActivity extends AppCompatActivity {
                     buffer.get(bytes);
                     imageByteJPG = bytes;
 
-                    if(imageByteJPG != null && imageByteJPG.length > 0) {
+                    if (imageByteJPG != null && imageByteJPG.length > 0) {
                         buffer.clear();
                         new Handler(Looper.getMainLooper()).post(new Runnable() {
                             @Override
@@ -464,7 +478,7 @@ public class EvaluationActivity extends AppCompatActivity {
                                 textureView = findViewById(R.id.texture);
                                 textureView.setVisibility(View.GONE);
                                 takeImageButton.setVisibility(View.VISIBLE);
-                                if(isDepth16FormatSupported) {
+                                if (isDepth16FormatSupported) {
                                     takeDepthPicture();
                                 } else {
                                     Log.e("MWA", "Depth16 is not supported - no distance calculation possible");
@@ -489,7 +503,7 @@ public class EvaluationActivity extends AppCompatActivity {
                 @Override
                 public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
                     super.onCaptureCompleted(session, request, result);
-                    if(cameraDevice != null) {
+                    if (cameraDevice != null) {
                         createCameraPreview();
                     }
                 }
@@ -504,6 +518,7 @@ public class EvaluationActivity extends AppCompatActivity {
                         e.printStackTrace();
                     }
                 }
+
                 @Override
                 public void onConfigureFailed(CameraCaptureSession session) {
                 }
@@ -516,7 +531,7 @@ public class EvaluationActivity extends AppCompatActivity {
     // Take image in depth16 format
     private synchronized void takeDepthPicture() {
         verifyStoragePermissions(this);
-        if(null == cameraDevice) {
+        if (null == cameraDevice) {
             return;
         }
         // The android CameraManager class is used to manage all the camera devices in the android device
@@ -533,10 +548,10 @@ public class EvaluationActivity extends AppCompatActivity {
             // set size
 
             if (jpegSizes != null && 0 < jpegSizes.length) {
-                if(jpegSizes[0].getWidth() < width || jpegSizes[0].getHeight() < height) {
+                if (jpegSizes[0].getWidth() < width || jpegSizes[0].getHeight() < height) {
                     width = jpegSizes[0].getWidth();
                     height = jpegSizes[0].getHeight();
-                } else if(jpegSizes[0].getWidth() < jpegSizes[0].getHeight()) {
+                } else if (jpegSizes[0].getWidth() < jpegSizes[0].getHeight()) {
                     width = imageShortSide;
                     height = imageLongSide;
                 }
@@ -557,26 +572,12 @@ public class EvaluationActivity extends AppCompatActivity {
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, orientation);
 
             readerListener = reader -> {
-                // Image image = null;
                 try {
                     imageDepth16 = reader.acquireLatestImage();
-                    /*ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-                    image.getPlanes()[0].getBuffer().order(ByteOrder.nativeOrder());
-                    byte[] bytes = new byte[buffer.capacity()];
-                    buffer.get(bytes);*/
-                    // imageByteDepth16 = bytes;
-
-                    if(imageDepth16 != null) {
-                        // buffer.clear();
+                    if (imageDepth16 != null) {
                         new Handler(Looper.getMainLooper()).post(new Runnable() {
                             @Override
                             public void run() {
-                                // TODO: Do something with data of imageByteDepth16
-                                Log.e("MWA", "READY TO DO STH WITH DEPTH16");
-                                // ShortBuffer shortBuffer = imageByteDepth16.getPlanes()
-
-                                // int distance = getMillimetersDepth(imageDepth16, 50,50);
-                                // Log.d("Distanz", String.valueOf(distance));
                                 evaluateImage();
                             }
                         });
@@ -592,7 +593,7 @@ public class EvaluationActivity extends AppCompatActivity {
                 @Override
                 public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
                     super.onCaptureCompleted(session, request, result);
-                    if(cameraDevice != null) {
+                    if (cameraDevice != null) {
                         createCameraPreview();
                     }
                 }
@@ -609,6 +610,7 @@ public class EvaluationActivity extends AppCompatActivity {
                         Log.e("MWA", "HARD ERROR 3");
                     }
                 }
+
                 @Override
                 public void onConfigureFailed(CameraCaptureSession session) {
                 }
@@ -620,30 +622,29 @@ public class EvaluationActivity extends AppCompatActivity {
 
     private void createCameraPreview() {
         try {
-            Log.e("MWA", "createCameraPreview");
             SurfaceTexture texture = textureView.getSurfaceTexture();
             assert texture != null;
             texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
             Surface surface = new Surface(texture);
-                captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-                captureRequestBuilder.addTarget(surface);
-                cameraDevice.createCaptureSession(Collections.singletonList(surface), new CameraCaptureSession.StateCallback() {
-                    @Override
-                    public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
-                        //The camera is already closed
-                        if (null == cameraDevice) {
-                            return;
-                        }
-                        // When the session is ready, start displaying the preview.
-                        cameraCaptureSessions = cameraCaptureSession;
-                        updatePreview();
+            captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+            captureRequestBuilder.addTarget(surface);
+            cameraDevice.createCaptureSession(Collections.singletonList(surface), new CameraCaptureSession.StateCallback() {
+                @Override
+                public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
+                    //The camera is already closed
+                    if (null == cameraDevice) {
+                        return;
                     }
+                    // When the session is ready, start displaying the preview.
+                    cameraCaptureSessions = cameraCaptureSession;
+                    updatePreview();
+                }
 
-                    @Override
-                    public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
-                        Toast.makeText(EvaluationActivity.this, "Configuration change", Toast.LENGTH_SHORT).show();
-                    }
-                }, null);
+                @Override
+                public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
+                    Toast.makeText(EvaluationActivity.this, "Configuration change", Toast.LENGTH_SHORT).show();
+                }
+            }, null);
 
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -651,7 +652,6 @@ public class EvaluationActivity extends AppCompatActivity {
     }
 
     private void openCamera() {
-        Log.e("MWA", "openCamera");
         CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         try {
             String cameraId = manager.getCameraIdList()[0];
@@ -666,7 +666,7 @@ public class EvaluationActivity extends AppCompatActivity {
                         isDepth16FormatSupported = false;
                         Log.e("ATTENTION", "Format " + format + " not supported - no depth information possible");
                     }
-                } catch(IllegalArgumentException e) {
+                } catch (IllegalArgumentException e) {
                     isDepth16FormatSupported = false;
                 }
             }
@@ -688,7 +688,6 @@ public class EvaluationActivity extends AppCompatActivity {
     }
 
     private void updatePreview() {
-        Log.e("MWA", "updatePreview");
         if (null == cameraDevice) {
             Log.e("MWA", "updatePreview error, return");
             return;
@@ -709,10 +708,11 @@ public class EvaluationActivity extends AppCompatActivity {
             cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), null, mBackgroundHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
-        } catch(Exception e) {
+        } catch (Exception e) {
             Log.e("MWA", "HARD ERROR");
         }
     }
+
     private void closeCamera() {
         if (null != cameraDevice) {
             cameraDevice.close();
@@ -750,7 +750,6 @@ public class EvaluationActivity extends AppCompatActivity {
 
     @Override
     public void onPause() {
-        Log.e("MWA", "onPause");
         closeCamera();
         stopBackgroundThread();
         super.onPause();
@@ -780,7 +779,7 @@ public class EvaluationActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    public void openInfoDialog(){
+    public void openInfoDialog() {
         InfoDialog infoDialog = new InfoDialog();
         infoDialog.show(getSupportFragmentManager(), "info dialog");
     }
@@ -802,31 +801,31 @@ public class EvaluationActivity extends AppCompatActivity {
         JPEG(ImageFormat.JPEG),
         DEPTH16(ImageFormat.DEPTH16);
         public final int imageFormat;
+
         OutputFormat(int imageFormat) {
             this.imageFormat = imageFormat;
         }
     }
 
-//    Distance Calculation
-    public int getMillimetersDepth(Image depthImage, int x, int y){
-        Log.e("MWA-Daten - x,y:", x + " " + y);
-        //Log.e("MWA-Daten - w,h:", depthImage.getWidth() + " " + depthImage.getHeight());
-        if(x >= depthImage.getWidth()) {
-            x = depthImage.getWidth();
-        }
-        if(y >= depthImage.getHeight()) {
-            y = depthImage.getHeight();
-        }
-        Image.Plane plane = depthImage.getPlanes()[0];
-        int byteIndex = 120 * plane.getPixelStride() + 213 * plane.getRowStride();
+    //    Distance Calculation
+    public int getMillimetersDepth(int x, int y) {
+
+        Image.Plane plane = imageDepth16.getPlanes()[0];
+        int byteIndex = x * plane.getPixelStride() + y * plane.getRowStride();
         ByteBuffer buffer = plane.getBuffer().order(ByteOrder.nativeOrder());
         short depthSample = buffer.getShort(byteIndex);
-
-        /*
-        short depthRange = (short) (depthSample & 0x1FFF);
-        short depthConfidence = (short) ((depthSample >> 13) & 0x7);
-        float depthPercentage = depthConfidence == 0 ? 1.f : (depthConfidence - 1)/7f;
-         */
+        buffer.clear();
         return (depthSample & 0x1FFF);
+    }
+
+    private double claculateAverageDistance(List<Integer> distances) {
+        Integer sum = 0;
+        if (!distances.isEmpty()) {
+            for (Integer mark : distances) {
+                sum += mark;
+            }
+            return sum.doubleValue() / distances.size();
+        }
+        return sum;
     }
 }

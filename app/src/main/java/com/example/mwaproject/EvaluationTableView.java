@@ -48,9 +48,8 @@ public class EvaluationTableView {
             List<DetectedObject.Label> objectLabels = detectedObject.getLabels();
             String position = getPosition(directionInfoGrid, detectedObject);
             double distance = detectedObject.getDistance();
-            distance = distance / 1000;
             if (objectLabels.isEmpty()) {
-                addEvaluationRow(applicationContext, "Unbekannt", 0, 0, position);
+                addEvaluationRow(applicationContext, "Unbekannt", 0, distance, position);
             } else {
                 for (DetectedObject.Label label : detectedObject.getLabels()) {
                     String labelText = label.getText();
@@ -98,7 +97,13 @@ public class EvaluationTableView {
         newRow.addView(positionTextView);
 
         // Distanz
-        String distanceString = String.format("%.2f", distance / 1000) + " m";
+        String distanceString;
+        if(distance > 0) {
+            distanceString = String.format("%.2f", distance / 1000) + " m";
+        } else {
+            distanceString = "Unbekannt";
+        }
+
         TextView distanceTextView = new TextView(applicationContext);
         distanceTextView.setText(distanceString);
         distanceTextView.setTextColor(Color.BLACK);
