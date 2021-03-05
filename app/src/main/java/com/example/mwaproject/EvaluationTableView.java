@@ -7,7 +7,9 @@ import android.util.Log;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
+
 import com.google.mlkit.vision.objects.DetectedObject;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,9 +27,10 @@ public class EvaluationTableView {
 
     /**
      * Fill table with content
+     *
      * @param applicationContext - context
-     * @param detectedObjects - list with detected objects with their details
-     * @param directionInfoGrid - list with nine rectangles of the image for position calculation
+     * @param detectedObjects    - list with detected objects with their details
+     * @param directionInfoGrid  - list with nine rectangles of the image for position calculation
      */
     public void drawDetectedObjectInformations(Context applicationContext, List<DetectedObjectWithDistance> detectedObjects, ArrayList<DirectionInfoRect> directionInfoGrid) {
         String[] headLabels = {"Objekt", "Confidence", "Position", "Distanz"};
@@ -51,13 +54,20 @@ public class EvaluationTableView {
             List<DetectedObject.Label> objectLabels = detectedObject.getLabels();
             String position = getPosition(directionInfoGrid, detectedObject);
             double distance = detectedObject.getDistance();
+            String distanceString = getDistanceString(distance);
+            boolean firstlabel = true;
             if (objectLabels.isEmpty()) {
-                addEvaluationRow(applicationContext, "Unbekannt", 0, distance, position);
+                addEvaluationRow(applicationContext, "Unbekannt", 0, distanceString, position);
             } else {
                 for (DetectedObject.Label label : detectedObject.getLabels()) {
                     String labelText = label.getText();
                     float confidence = label.getConfidence();
-                    addEvaluationRow(applicationContext, labelText, confidence, distance, position);
+                    if (!firstlabel) {
+                        distanceString = "";
+                        position = "";
+                    }
+                    addEvaluationRow(applicationContext, labelText, confidence, distanceString, position);
+                    firstlabel = false;
                 }
             }
         }
@@ -65,13 +75,14 @@ public class EvaluationTableView {
 
     /**
      * Generate the value of each column of a row
+     *
      * @param applicationContext - context
-     * @param labelText - object name
-     * @param confidence - confidence that object detection is correct
-     * @param distance - distance of the object (0 if not supported or detected)
-     * @param position - object position in the image
+     * @param labelText          - object name
+     * @param confidence         - confidence that object detection is correct
+     * @param distanceString     - distance of the object (0 if not supported or detected)
+     * @param position           - object position in the image
      */
-    private void addEvaluationRow(Context applicationContext, String labelText, float confidence, double distance, String position) {
+    private void addEvaluationRow(Context applicationContext, String labelText, float confidence, String distanceString, String position) {
         TableRow newRow = new TableRow(applicationContext);
         newRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
         newRow.setId(rowIndex);
@@ -106,13 +117,6 @@ public class EvaluationTableView {
         newRow.addView(positionTextView);
 
         // Distanz
-        String distanceString;
-        if(distance > 0) {
-            distanceString = String.format("%.2f", distance / 1000) + " m";
-        } else {
-            distanceString = "Unbekannt";
-        }
-
         TextView distanceTextView = new TextView(applicationContext);
         distanceTextView.setText(distanceString);
         distanceTextView.setTextColor(Color.BLACK);
@@ -122,6 +126,16 @@ public class EvaluationTableView {
         newRow.addView(distanceTextView);
 
         tableLayout.addView(newRow, new TableLayout.LayoutParams(TableLayout.LayoutParams.FILL_PARENT, TableLayout.LayoutParams.WRAP_CONTENT));
+    }
+
+    private String getDistanceString(double distance) {
+        String distanceString;
+        if (distance > 0) {
+            distanceString = String.format("%.2f", distance / 1000) + " m";
+        } else {
+            distanceString = "Unbekannt";
+        }
+        return distanceString;
     }
 
     private String getPosition(ArrayList<DirectionInfoRect> directionInfoGrid, DetectedObject detectedObject) {
