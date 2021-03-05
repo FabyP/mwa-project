@@ -10,7 +10,7 @@ import java.util.List;
  * DetectedObject with distance information. If distance is unknown, it can be set to 0.
  */
 public class DetectedObjectWithDistance extends DetectedObject {
-    private double distance;
+    private final double distance;
 
     public DetectedObjectWithDistance(@NonNull Rect rect, @Nullable Integer integer, @NonNull List<Label> list, double distance) {
         super(rect, integer, list);

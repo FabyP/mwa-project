@@ -18,10 +18,7 @@ public class InfoDialog extends AppCompatDialogFragment {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         builder.setTitle("Information")
                 .setMessage("My Way App kann Ihnen sagen, was sich mit welchem Abstand in einer Momentaufnahme wahrscheinlich vor Ihnen befindet. Um die Auswertung zu starten, berühren Sie zwei mal schnell hintereinander den Bildschirm.")
-                .setPositiveButton("ok", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) { }
-                });
+                .setPositiveButton("ok", (dialog, which) -> { });
         return builder.create();
     }
 }
