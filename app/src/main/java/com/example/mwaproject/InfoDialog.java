@@ -2,7 +2,6 @@ package com.example.mwaproject;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.content.DialogInterface;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -18,10 +17,7 @@ public class InfoDialog extends AppCompatDialogFragment {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         builder.setTitle("Information")
                 .setMessage("My Way App kann Ihnen sagen, was sich mit welchem Abstand in einer Momentaufnahme wahrscheinlich vor Ihnen befindet. Um die Auswertung zu starten, berühren Sie zwei mal schnell hintereinander den Bildschirm.")
-                .setPositiveButton("ok", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) { }
-                });
+                .setPositiveButton("ok", (dialog, which) -> { });
         return builder.create();
     }
 }

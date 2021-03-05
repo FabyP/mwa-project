@@ -3,13 +3,10 @@ package com.example.mwaproject;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Rect;
-import android.util.Log;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
-
 import com.google.mlkit.vision.objects.DetectedObject;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -98,7 +95,7 @@ public class EvaluationTableView {
         newRow.addView(label);
 
         // Confidence
-        String confidenceString = String.format("%.2f", confidence * 100) + "%";
+        String confidenceString = String.format("%.2f %%", confidence * 100);
         TextView confidenceTextView = new TextView(applicationContext);
         confidenceTextView.setText(confidenceString);
         confidenceTextView.setTextColor(Color.BLACK);
@@ -131,7 +128,7 @@ public class EvaluationTableView {
     private String getDistanceString(double distance) {
         String distanceString;
         if (distance > 0) {
-            distanceString = String.format("%.2f", distance / 1000) + " m";
+            distanceString = String.format("%.2f m", distance / 1000);
         } else {
             distanceString = "Unbekannt";
         }
@@ -140,11 +137,11 @@ public class EvaluationTableView {
 
     private String getPosition(ArrayList<DirectionInfoRect> directionInfoGrid, DetectedObject detectedObject) {
         String position = "Unbekannt";
-        Double max = 0.0;
+        double max = 0.0;
         for (DirectionInfoRect directionInfoRect : directionInfoGrid) {
-            Double areaOverlap = overLappingAreaPercentage(directionInfoRect.rect, detectedObject.getBoundingBox());
-            Double overlapSelf = overLappingAreaPercentage(directionInfoRect.rect, directionInfoRect.rect);
-            Double overlapPercentage = areaOverlap / overlapSelf;
+            double areaOverlap = overLappingAreaPercentage(directionInfoRect.rect, detectedObject.getBoundingBox());
+            double overlapSelf = overLappingAreaPercentage(directionInfoRect.rect, directionInfoRect.rect);
+            double overlapPercentage = areaOverlap / overlapSelf;
             if (overlapPercentage > max) {
                 max = overlapPercentage;
                 position = directionInfoRect.toString();

@@ -42,11 +42,8 @@ import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TableLayout;
 import android.widget.Toast;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.mlkit.common.model.LocalModel;
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.objects.DetectedObject;
@@ -71,7 +68,6 @@ public class EvaluationActivity extends AppCompatActivity {
     // Camera
     private TextureView textureView;
     private Button takeImageButton;
-    private LinearLayout evaluationLayout;
 
     private CameraDevice cameraDevice;
     private CameraCaptureSession cameraCaptureSessions;
@@ -87,8 +83,8 @@ public class EvaluationActivity extends AppCompatActivity {
     private boolean isReadyForNextPicture = true;
     private Size imageDimension;
     private static final int REQUEST_CAMERA_PERMISSION = 200;
-    private int imageLongSide = 1280;
-    private int imageShortSide = 960;
+    private final int imageLongSide = 1280;
+    private final int imageShortSide = 960;
     byte[] imageByteJPG;
     Image imageDepth16;
 
@@ -114,7 +110,6 @@ public class EvaluationActivity extends AppCompatActivity {
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
         setContentView(R.layout.activity_evaluation);
         textureView = findViewById(R.id.texture);
-        evaluationLayout = findViewById(R.id.evaluationLinearLayout);
         takeImageButton = findViewById(R.id.photoButton);
         takeImageButton.setOnClickListener(v -> prepareForTakingImage());
 
@@ -215,7 +210,7 @@ public class EvaluationActivity extends AppCompatActivity {
         int rotation = getWindowManager().getDefaultDisplay().getRotation();
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         String modelType = sharedPref.getString(SettingsActivity.KEY_PREF_EVALUATION_MODEL, "DEFAULT");
-        Toast.makeText(this, modelType.toString(),Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, modelType,Toast.LENGTH_SHORT).show();
 
         // Get an objectDetector with model type (chosen by the user)
         ObjectDetector objectDetector;
@@ -243,74 +238,64 @@ public class EvaluationActivity extends AppCompatActivity {
 
         objectDetector.process(image)
                 .addOnSuccessListener(
-                        new OnSuccessListener<List<DetectedObject>>() {
-                            @Override
-                            public void onSuccess(List<DetectedObject> detectedObjects) {
+                        detectedObjects -> {
+                            ImageView imageView = findViewById(R.id.imageView);
 
-                                ImageView imageView = findViewById(R.id.imageView);
-
-                                // Calculate the distance for each detected object
-                                List<DetectedObjectWithDistance> detectedObjectList = new ArrayList<>();
-                                if (isDepth16FormatSupported && imageDepth16 != null) {
-                                    for (DetectedObject obj : detectedObjects) {
-                                        double distance;
-                                        Rect boundingBox = obj.getBoundingBox();
-                                        List<Integer> depthValues = new ArrayList<>();
-                                        for (int x = boundingBox.left; x < boundingBox.left + boundingBox.width(); x++) {
-                                            if (x < imageDepth16.getWidth()) {
-                                                for (int y = boundingBox.top; y < boundingBox.top + boundingBox.height(); y++) {
-                                                    if (y < imageDepth16.getHeight()) {
-                                                        int d = getMillimetersDepth(x, y);
-                                                        if (d > 0) {
-                                                            depthValues.add(d);
-                                                        }
+                            // Calculate the distance for each detected object
+                            List<DetectedObjectWithDistance> detectedObjectList = new ArrayList<>();
+                            if (isDepth16FormatSupported && imageDepth16 != null) {
+                                for (DetectedObject obj : detectedObjects) {
+                                    double distance;
+                                    Rect boundingBox = obj.getBoundingBox();
+                                    List<Integer> depthValues = new ArrayList<>();
+                                    for (int x = boundingBox.left; x < boundingBox.left + boundingBox.width(); x++) {
+                                        if (x < imageDepth16.getWidth()) {
+                                            for (int y = boundingBox.top; y < boundingBox.top + boundingBox.height(); y++) {
+                                                if (y < imageDepth16.getHeight()) {
+                                                    int d = getMillimetersDepth(x, y);
+                                                    if (d > 0) {
+                                                        depthValues.add(d);
                                                     }
                                                 }
                                             }
                                         }
-
-                                        distance = calculateAverageDistance(depthValues);
-                                        DetectedObjectWithDistance detectedObject = new DetectedObjectWithDistance(obj.getBoundingBox(), obj.getTrackingId(), obj.getLabels(), distance);
-                                        detectedObjectList.add(detectedObject);
                                     }
-                                    imageDepth16.close();
-                                    imageDepth16 = null;
 
-                                } else {
-                                    // DEPTH16 is not supported: distance is unknown / 0
-                                    for (DetectedObject obj : detectedObjects) {
-                                        DetectedObjectWithDistance detectedObject = new DetectedObjectWithDistance(obj.getBoundingBox(), obj.getTrackingId(), obj.getLabels(), 0);
-                                        detectedObjectList.add(detectedObject);
-                                    }
+                                    distance = calculateAverageDistance(depthValues);
+                                    DetectedObjectWithDistance detectedObject = new DetectedObjectWithDistance(obj.getBoundingBox(), obj.getTrackingId(), obj.getLabels(), distance);
+                                    detectedObjectList.add(detectedObject);
                                 }
+                                imageDepth16.close();
+                                imageDepth16 = null;
 
-                                // Set evaluation image view (shows taken picture with bounding boxes of detected objects)
-                                EvaluationImageView evaluationView = new EvaluationImageView(imageView, myBitmap, rotation);
-                                evaluationView.setDetectedObjects(detectedObjectList);
-                                evaluationView.drawEvalRectsOnImageView();
-
-                                // Set evaluation table (shows a table with all available information about the detected objects)
-                                TableLayout tableLayout = findViewById(R.id.tableLayout);
-                                tableLayout.removeAllViews();
-                                EvaluationTableView evaluationTableView = new EvaluationTableView(tableLayout);
-                                evaluationTableView.drawDetectedObjectInformations(getApplicationContext(), detectedObjectList, directionInfoGrid);
+                            } else {
+                                // DEPTH16 is not supported: distance is unknown / 0
+                                for (DetectedObject obj : detectedObjects) {
+                                    DetectedObjectWithDistance detectedObject = new DetectedObjectWithDistance(obj.getBoundingBox(), obj.getTrackingId(), obj.getLabels(), 0);
+                                    detectedObjectList.add(detectedObject);
+                                }
                             }
+
+                            // Set evaluation image view (shows taken picture with bounding boxes of detected objects)
+                            EvaluationImageView evaluationView = new EvaluationImageView(imageView, myBitmap, rotation);
+                            evaluationView.setDetectedObjects(detectedObjectList);
+                            evaluationView.drawEvalRectsOnImageView();
+
+                            // Set evaluation table (shows a table with all available information about the detected objects)
+                            TableLayout tableLayout = findViewById(R.id.tableLayout);
+                            tableLayout.removeAllViews();
+                            EvaluationTableView evaluationTableView = new EvaluationTableView(tableLayout);
+                            evaluationTableView.drawDetectedObjectInformations(getApplicationContext(), detectedObjectList, directionInfoGrid);
                         })
-                .addOnFailureListener(
-                        new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                Log.i("Error:", "Detected " + e);
-                            }
-                        });
+                .addOnFailureListener(e -> Log.i("Error:", "Detected " + e));
     }
 
     /**
      * Divide the picture into 9 parts.
      * Generates a list with directionInfoRects for eacht image part.
-     * @param myBitmap
-     * @param parts
-     * @return
+     * @param myBitmap - image bitmap
+     * @param parts - parts to divide image in horizontal and vertical direction (example: 3 parts -> 9 directionInfoRects)
+     * @return list with directionInfoRects
      */
     private ArrayList<DirectionInfoRect> getDirectionInfoRectsBySplittingImageEqually(Bitmap myBitmap, int parts) {
         int w = myBitmap.getWidth();
@@ -456,21 +441,18 @@ public class EvaluationActivity extends AppCompatActivity {
 
                     if (imageByteJPG != null && imageByteJPG.length > 0) {
                         buffer.clear();
-                        new Handler(Looper.getMainLooper()).post(new Runnable() {
-                            @Override
-                            public void run() {
-                                // Show the image and not the camera view anymore
-                                textureView = findViewById(R.id.texture);
-                                textureView.setVisibility(View.GONE);
-                                takeImageButton.setVisibility(View.VISIBLE);
-                                // Take immediately an image in DEPTH16, if supported
-                                // if not: start object detection
-                                if (isDepth16FormatSupported) {
-                                    takeDepthPicture();
-                                } else {
-                                    Log.e("MWA", "Depth16 is not supported - no distance calculation possible");
-                                    evaluateImage();
-                                }
+                        new Handler(Looper.getMainLooper()).post(() -> {
+                            // Show the image and not the camera view anymore
+                            textureView = findViewById(R.id.texture);
+                            textureView.setVisibility(View.GONE);
+                            takeImageButton.setVisibility(View.VISIBLE);
+                            // Take immediately an image in DEPTH16, if supported
+                            // if not: start object detection
+                            if (isDepth16FormatSupported) {
+                                takeDepthPicture();
+                            } else {
+                                Log.e("MWA", "Depth16 is not supported - no distance calculation possible");
+                                evaluateImage();
                             }
                         });
                     }
@@ -553,22 +535,7 @@ public class EvaluationActivity extends AppCompatActivity {
             captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, orientation);
 
-            readerListener = reader -> {
-                try {
-                    imageDepth16 = reader.acquireLatestImage();
-                    // Start object detection after taking image successfully
-                    if (imageDepth16 != null) {
-                        new Handler(Looper.getMainLooper()).post(new Runnable() {
-                            @Override
-                            public void run() {
-                                evaluateImage();
-                            }
-                        });
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            };
+            readerListener = this::onImageAvailable;
             reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
 
             // To capture or stream images from a camera device, the application must first create a camera capture session
@@ -784,6 +751,18 @@ public class EvaluationActivity extends AppCompatActivity {
                     PERMISSIONS_STORAGE,
                     REQUEST_EXTERNAL_STORAGE
             );
+        }
+    }
+
+    private void onImageAvailable(ImageReader reader) {
+        try {
+            imageDepth16 = reader.acquireLatestImage();
+            // Start object detection after taking image successfully
+            if (imageDepth16 != null) {
+                new Handler(Looper.getMainLooper()).post(this::evaluateImage);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
