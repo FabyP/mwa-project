@@ -175,7 +175,7 @@ public class EvaluationActivity extends AppCompatActivity {
         float threshold;
         try {
             SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-            threshold = Float.parseFloat(sharedPref.getString("pref_threshold", "0.6f"));
+            threshold = (float) (sharedPref.getInt("threshold", 60)) / 100;
         } catch (NumberFormatException e) {
             Log.e("MWA: Detector", "Failed to load threshold");
             threshold = (float) 0.6;
