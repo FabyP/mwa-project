@@ -61,10 +61,4 @@ public class EvaluationImageView {
         }
     }
 
-    public void setDirectionInfoObjects(ArrayList<DirectionInfoRect> directionInfoGrid) {
-        for (final DirectionInfoRect singleDirectionInfoGrid : directionInfoGrid) {
-            Rect rect = singleDirectionInfoGrid.rect;
-            detectedObjectRects.add(rect);
-        }
-    }
 }
