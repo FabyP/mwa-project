@@ -535,7 +535,17 @@ public class EvaluationActivity extends AppCompatActivity {
             captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, orientation);
 
-            readerListener = this::onImageAvailable;
+            readerListener = reader -> {
+                try {
+                    imageDepth16 = reader.acquireLatestImage();
+                    // Start object detection after taking image successfully
+                    if (imageDepth16 != null) {
+                        new Handler(Looper.getMainLooper()).post(this::evaluateImage);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            };
             reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
 
             // To capture or stream images from a camera device, the application must first create a camera capture session
@@ -751,18 +761,6 @@ public class EvaluationActivity extends AppCompatActivity {
                     PERMISSIONS_STORAGE,
                     REQUEST_EXTERNAL_STORAGE
             );
-        }
-    }
-
-    private void onImageAvailable(ImageReader reader) {
-        try {
-            imageDepth16 = reader.acquireLatestImage();
-            // Start object detection after taking image successfully
-            if (imageDepth16 != null) {
-                new Handler(Looper.getMainLooper()).post(this::evaluateImage);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 
