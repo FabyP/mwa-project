@@ -42,6 +42,7 @@ import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.ScrollView;
 import android.widget.TableLayout;
 import android.widget.Toast;
 import com.google.mlkit.common.model.LocalModel;
@@ -112,6 +113,7 @@ public class EvaluationActivity extends AppCompatActivity {
         textureView = findViewById(R.id.texture);
         takeImageButton = findViewById(R.id.photoButton);
         takeImageButton.setOnClickListener(v -> prepareForTakingImage());
+        ScrollView scrollView = findViewById(R.id.scrollView);
 
         assert textureView != null;
         textureView.setSurfaceTextureListener(textureListener);
@@ -121,9 +123,12 @@ public class EvaluationActivity extends AppCompatActivity {
         if (imageByteJPG != null) {
             textureView.setVisibility(View.GONE);
             takeImageButton.setVisibility(View.VISIBLE);
+            scrollView.setVisibility(View.VISIBLE);
+
         } else {
             textureView.setVisibility(View.VISIBLE);
             takeImageButton.setVisibility(View.GONE);
+            scrollView.setVisibility(View.GONE);
         }
 
         // Recognize double tap on screen, take a picture and change activity
@@ -150,7 +155,6 @@ public class EvaluationActivity extends AppCompatActivity {
 
     private void prepareForTakingImage() {
         if (isReadyForNextPicture) {
-            Log.e("MWA", "onDoubleTap");
             takePicture();
         } else {
             Log.e("MWA", "Reset camera - try it again");
@@ -446,6 +450,8 @@ public class EvaluationActivity extends AppCompatActivity {
                             textureView = findViewById(R.id.texture);
                             textureView.setVisibility(View.GONE);
                             takeImageButton.setVisibility(View.VISIBLE);
+                            ScrollView scrollView = findViewById(R.id.scrollView);
+                            scrollView.setVisibility(View.VISIBLE);
                             // Take immediately an image in DEPTH16, if supported
                             // if not: start object detection
                             if (isDepth16FormatSupported) {
