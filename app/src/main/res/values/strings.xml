@@ -7,7 +7,9 @@
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string-array name="model_types">
         <item>DEFAULT</item>
-        <item>OBJECT_LABELER_V1_1</item>
+        <item>GOOGLE_OBJECT_LABELER_V1_1</item>
         <item>MOBILENET_V2_1</item>
+        <item>INCEPTION_V4_QUANT</item>
+        <item>NASNET_HANDY</item>
     </string-array>
 </resources>

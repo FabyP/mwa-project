@@ -227,13 +227,21 @@ public class EvaluationActivity extends AppCompatActivity {
                         .build();
                 objectDetector = ObjectDetection.getClient(objectDetectorOptions);
                 break;
-            case "OBJECT_LABELER_V1_1":
+            case "GOOGLE_OBJECT_LABELER_V1_1":
                 Log.e("EVA: Detector", "OBJECT_LABELER_V1_1");
                 objectDetector = getCustomObjectDetector("lite-model_object_detection_mobile_object_labeler_v1_1.tflite");
                 break;
             case "MOBILENET_V2_1":
                 Log.e("EVA: Detector", "MOBILENET_V2_1");
                 objectDetector = getCustomObjectDetector("mobilenet_v2_1.0_224_1_metadata_1.tflite");
+                break;
+            case "INCEPTION_V4_QUANT":
+                Log.e("EVA: Detector", "Inception_V4_QUANT");
+                objectDetector = getCustomObjectDetector("inception_v4_quant_1_default_1.tflite");
+                break;
+            case "NASNET_HANDY":
+                Log.e("EVA: Detector", "NASNET_HANDY");
+                objectDetector = getCustomObjectDetector("mnasnet_1.3_224_1_metadata_1.tflite");
                 break;
         }
 
