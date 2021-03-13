@@ -62,6 +62,9 @@ public class EvaluationTableView {
             } else {
                 for (DetectedObject.Label label : detectedObject.getLabels()) {
                     String labelText = label.getText();
+                    if(labelText.equals("")){
+                        labelText = "Unbekannt";
+                    }
                     float confidence = label.getConfidence();
 
                     SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(applicationContext);
