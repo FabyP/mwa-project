@@ -1,11 +1,15 @@
 package com.example.mwaproject;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
+
+import androidx.preference.PreferenceManager;
+
 import com.google.mlkit.vision.objects.DetectedObject;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,6 +63,12 @@ public class EvaluationTableView {
                 for (DetectedObject.Label label : detectedObject.getLabels()) {
                     String labelText = label.getText();
                     float confidence = label.getConfidence();
+
+                    SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(applicationContext);
+                    String modelType = sharedPref.getString(SettingsActivity.KEY_PREF_EVALUATION_MODEL, "DEFAULT");
+                    if (modelType.equals("NASNET_HANDY")){
+                        confidence = confidence / 10;
+                    }
                     if (!firstlabel) {
                         distanceString = "";
                         position = "";
