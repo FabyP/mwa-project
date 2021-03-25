@@ -76,7 +76,7 @@ public class EvaluationActivity extends AppCompatActivity {
     private final Semaphore mCameraOpenCloseLock = new Semaphore(1);
     public boolean isDepth16FormatSupported = true;
 
-    public static int orientation = 90;
+    public int orientation = 0;
 
     // Image
     private ImageReader reader;
@@ -211,7 +211,10 @@ public class EvaluationActivity extends AppCompatActivity {
         }
 
         Bitmap myBitmap = BitmapFactory.decodeByteArray(imageByteJPG, 0, imageByteJPG.length);
-        int rotation = getWindowManager().getDefaultDisplay().getRotation();
+
+        // int rotation = getWindowManager().getDefaultDisplay().getRotation();
+        Log.e("MWA", "eva: rotation is " + orientation);
+
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         String modelType = sharedPref.getString(SettingsActivity.KEY_PREF_EVALUATION_MODEL, "DEFAULT");
         Toast.makeText(this, modelType,Toast.LENGTH_SHORT).show();
@@ -245,7 +248,7 @@ public class EvaluationActivity extends AppCompatActivity {
                 break;
         }
 
-        InputImage image = InputImage.fromBitmap(myBitmap, rotation);
+        InputImage image = InputImage.fromBitmap(myBitmap, 0);
         directionInfoGrid = getDirectionInfoRectsBySplittingImageEqually(myBitmap, 3);
 
         objectDetector.process(image)
@@ -289,7 +292,7 @@ public class EvaluationActivity extends AppCompatActivity {
                             }
 
                             // Set evaluation image view (shows taken picture with bounding boxes of detected objects)
-                            EvaluationImageView evaluationView = new EvaluationImageView(imageView, myBitmap, rotation);
+                            EvaluationImageView evaluationView = new EvaluationImageView(imageView, myBitmap, orientation);
                             evaluationView.setDetectedObjects(detectedObjectList);
                             evaluationView.drawEvalRectsOnImageView();
 
@@ -314,6 +317,22 @@ public class EvaluationActivity extends AppCompatActivity {
         int h = myBitmap.getHeight();
         String[] verticalDirections = {"Rechts", "Mitte", "Links",};
         String[] horizontalDirections = {"Oben", "Mitte", "Unten",};
+
+        /*
+        if(myBitmap.getWidth() > myBitmap.getHeight()) {
+            verticalDirections = new String[3];
+            horizontalDirections = new String[3];
+
+            verticalDirections[0] = "Rechts";
+            verticalDirections[1] = "Mitte";
+            verticalDirections[2] = "Links";
+
+            horizontalDirections[0] = "Oben";
+            horizontalDirections[1] = "Mitte";
+            horizontalDirections[2] = "Unten";
+        }
+         */
+
         int verticalCounter = 0;
         int horizontalCounter = 0;
         directionInfoGrid = new ArrayList<>();
@@ -414,6 +433,8 @@ public class EvaluationActivity extends AppCompatActivity {
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraDevice.getId());
             Size[] jpegSizes = null;
             if (characteristics != null) {
+                orientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+                Log.e("MWA", "orientation by characteristic: " + orientation);
                 jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.JPEG);
             }
             // Default values

@@ -47,11 +47,13 @@ public class EvaluationImageView {
             tempCanvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, myPaint);
         }
 
+
         // Attach the canvas to the ImageView
         imageView.setImageBitmap(tempBitmap);
-        if(myBitmap.getWidth() > myBitmap.getHeight()) {
-            imageView.setRotation(EvaluationActivity.orientation);
-        }
+
+        imageView.setRotation(rotation);
+
+
     }
 
     public void setDetectedObjects(List<DetectedObjectWithDistance> detectedObjects) {
