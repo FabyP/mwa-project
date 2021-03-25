@@ -76,7 +76,7 @@ public class EvaluationActivity extends AppCompatActivity {
     private final Semaphore mCameraOpenCloseLock = new Semaphore(1);
     public boolean isDepth16FormatSupported = true;
 
-    public int orientation = 90;
+    public static int orientation = 90;
 
     // Image
     private ImageReader reader;
@@ -446,7 +446,7 @@ public class EvaluationActivity extends AppCompatActivity {
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraDevice.getId());
             Size[] jpegSizes = null;
             if (characteristics != null) {
-                // orientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+                orientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
                 Log.e("MWA", "orientation by characteristic: " + orientation);
                 jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.JPEG);
             }

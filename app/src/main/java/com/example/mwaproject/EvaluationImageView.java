@@ -52,7 +52,7 @@ public class EvaluationImageView {
         imageView.setImageBitmap(tempBitmap);
         // imageView.setRotation(rotation);
         if(tempBitmap.getWidth() > tempBitmap.getHeight()) {
-            imageView.setRotation(rotation);
+            imageView.setRotation(EvaluationActivity.orientation);
         }
 
 
