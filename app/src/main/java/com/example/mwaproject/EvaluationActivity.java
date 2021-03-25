@@ -213,7 +213,7 @@ public class EvaluationActivity extends AppCompatActivity {
         Bitmap myBitmap = BitmapFactory.decodeByteArray(imageByteJPG, 0, imageByteJPG.length);
 
         int rotation = getWindowManager().getDefaultDisplay().getRotation();
-        // Log.e("MWA", "eva: rotation is " + orientation);
+        Log.e("MWA", "eva: rotation is " + orientation);
 
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         String modelType = sharedPref.getString(SettingsActivity.KEY_PREF_EVALUATION_MODEL, "DEFAULT");
@@ -293,6 +293,7 @@ public class EvaluationActivity extends AppCompatActivity {
 
                             // Set evaluation image view (shows taken picture with bounding boxes of detected objects)
                             EvaluationImageView evaluationView = new EvaluationImageView(imageView, myBitmap, rotation);
+                            evaluationView.setDirectionInfoObjects(directionInfoGrid);
                             evaluationView.setDetectedObjects(detectedObjectList);
                             evaluationView.drawEvalRectsOnImageView();
 
@@ -318,40 +319,26 @@ public class EvaluationActivity extends AppCompatActivity {
         String[] verticalDirections = {"Rechts", "Mitte", "Links",};
         String[] horizontalDirections = {"Oben", "Mitte", "Unten",};
 
-//        if(myBitmap.getWidth() > myBitmap.getHeight()) {
-//            Log.e("MWA", "check");
-//        }
-
         int verticalCounter = 0;
         int horizontalCounter = 0;
         directionInfoGrid = new ArrayList<>();
 
         if(myBitmap.getWidth() < myBitmap.getHeight()) {
-//            Log.e("MWA", "Fabi check");
-//            verticalDirections = new String[3];
-//            horizontalDirections = new String[3];
-//
-//            verticalDirections[0] = "oben";
-//            verticalDirections[1] = "mitte";
-//            verticalDirections[2] = "unten";
-//
-//            horizontalDirections[0] = "links";
-//            horizontalDirections[1] = "mitte";
-//            horizontalDirections[2] = "rects";
-//
-///*
-//            verticalDirections[0] = "unten";
-//            verticalDirections[1] = "mitte";
-//            verticalDirections[2] = "oben";
-//
-//            horizontalDirections[0] = "rechts";
-//            horizontalDirections[1] = "mitte";
-//            horizontalDirections[2] = "links";
+            verticalDirections = new String[3];
+            horizontalDirections = new String[3];
+
+            verticalDirections[0] = "oben";
+            verticalDirections[1] = "mitte";
+            verticalDirections[2] = "unten";
+
+            horizontalDirections[0] = "links";
+            horizontalDirections[1] = "mitte";
+            horizontalDirections[2] = "rechts";
 
         }
 
         for (int x = 0; x < w; x = x + (int) Math.ceil((double) w / parts)) {
-            for (int y = 0; y < h; y = y + (h / parts)) {
+            for (int y = 0; y < h; y = y + (int) Math.ceil((double) h / parts)) {
                 Rect rect = new Rect(x, y, x + (w / parts), y + (h / parts));
                 DirectionInfoRect directionInfoRect = new DirectionInfoRect(horizontalDirections[horizontalCounter % parts], verticalDirections[verticalCounter % parts], rect);
                 directionInfoGrid.add(directionInfoRect);
@@ -446,8 +433,8 @@ public class EvaluationActivity extends AppCompatActivity {
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraDevice.getId());
             Size[] jpegSizes = null;
             if (characteristics != null) {
-                orientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-                Log.e("MWA", "orientation by characteristic: " + orientation);
+                //orientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+                //Log.e("MWA", "orientation by characteristic: " + orientation);
                 jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.JPEG);
             }
             // Default values

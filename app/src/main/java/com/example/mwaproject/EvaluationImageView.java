@@ -19,6 +19,7 @@ public class EvaluationImageView {
     public ImageView imageView;
     public Bitmap myBitmap;
     public int rotation;
+    public ArrayList<DirectionInfoRect> test;
 
     public EvaluationImageView(ImageView imageView, Bitmap myBitmap, int rotation) {
         this.imageView = imageView;
@@ -46,7 +47,12 @@ public class EvaluationImageView {
         for (Rect rect : detectedObjectRects) {
             tempCanvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, myPaint);
         }
-
+//        for (final DirectionInfoRect singleDirectionInfoGrid : test) {
+//            Rect rect = singleDirectionInfoGrid.rect;
+//            myPaint.setTextSize(50);
+//            tempCanvas.drawText(singleDirectionInfoGrid.toString(), rect.left, rect.bottom, myPaint);
+//            tempCanvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, myPaint);
+//        }
 
         // Attach the canvas to the ImageView
         imageView.setImageBitmap(tempBitmap);
@@ -63,6 +69,10 @@ public class EvaluationImageView {
             Rect boundingBox = detectedObject.getBoundingBox();
             detectedObjectRects.add(boundingBox);
         }
+    }
+
+    public void setDirectionInfoObjects(ArrayList<DirectionInfoRect> directionInfoGrid) {
+        test = directionInfoGrid;
     }
 
 }
