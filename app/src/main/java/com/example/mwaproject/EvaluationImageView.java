@@ -50,8 +50,10 @@ public class EvaluationImageView {
 
         // Attach the canvas to the ImageView
         imageView.setImageBitmap(tempBitmap);
-
-        imageView.setRotation(rotation);
+        // imageView.setRotation(rotation);
+        if(tempBitmap.getWidth() > tempBitmap.getHeight()) {
+            imageView.setRotation(rotation);
+        }
 
 
     }
